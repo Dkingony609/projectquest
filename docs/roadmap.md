@@ -63,3 +63,7 @@ M1 and M2 are engineering delivery gates. M3's moderated playtesting and hardwar
 ## Status discipline
 
 The repository's checks and commit history are the evidence of delivered engineering. [testing.md](testing.md) describes checks; [verification.md](verification.md) records concrete results and delivery blockers. A future industry card, roadmap item, data contract, or test plan does not imply playable content. Outstanding bespoke character/environment art, richer animation/audio, representative-device benchmarks, learner research and sector review remain visible production work even after the initial slice passes engineering checks.
+
+## Character upgrade extension (v0.3.0)
+
+Delivered foundation: two real anatomical body builds, textured skin/eyes/hair/clothing, finger geometry, independent game rigs and blended idle/walk motion for player/NPCs; 3D appearance preview, optional persisted body choice, reusable workplace wardrobes, bounded loading/retry and explicit resource disposal. Runtime movement, camera, interaction targets and both construction chapters are preserved. Broader identity art, facial/lip animation and measured device budgets remain later production work. See [characters.md](characters.md) and [verification.md](verification.md).

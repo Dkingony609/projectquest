@@ -9,6 +9,11 @@ import {
   type PathPoint,
 } from "./collision";
 import { batchStaticGeometry, usesSoftwareRenderer } from "./optimisation";
+import {
+  loadHumanLibrary,
+  type HumanCharacter,
+  type HumanLibrary,
+} from "./humans";
 import "./world.css";
 
 export interface WorldTarget {
@@ -32,7 +37,12 @@ interface WorldCanvasProps {
   checkpoint?: number;
   active: boolean;
   blocked: boolean;
-  appearance: { skin: string; shirt: string; hair: string };
+  appearance: {
+    skin: string;
+    shirt: string;
+    hair: string;
+    body?: "male" | "female";
+  };
   initialPosition?: WorldPosition;
   reducedMotion: boolean;
   lowSpec?: boolean;
@@ -105,16 +115,7 @@ const PALETTE = {
   earth: "#b19b81",
 };
 
-interface Character {
-  group: THREE.Group;
-  leftLeg: THREE.Group;
-  rightLeg: THREE.Group;
-  leftArm: THREE.Group;
-  rightArm: THREE.Group;
-  skin: THREE.MeshStandardMaterial;
-  shirt: THREE.MeshStandardMaterial;
-  hair: THREE.MeshStandardMaterial;
-}
+type Character = HumanCharacter;
 
 function surface(
   color: string,
@@ -181,60 +182,6 @@ function sphere(
   mesh.castShadow = true;
   parent.add(mesh);
   return mesh;
-}
-
-function makeCharacter(
-  appearance: { skin: string; shirt: string; hair: string },
-  hardhat = false,
-): Character {
-  const group = new THREE.Group();
-  const skin = surface(appearance.skin);
-  const shirt = surface(appearance.shirt);
-  const hair = surface(appearance.hair);
-  const trousers = surface("#253944");
-  const shoes = surface("#17272b");
-  const eyes = surface("#243339");
-  box(group, 0, 0.94, 0, 0.46, 0.61, 0.3, shirt);
-  cylinder(group, 0, 1.28, 0, 0.08, 0.16, skin);
-  sphere(group, 0, 1.49, 0, 0.215, skin);
-  const hairCap = sphere(group, 0, 1.6, -0.04, 0.2, hair);
-  hairCap.scale.set(1, 0.62, 1);
-  sphere(group, -0.075, 1.5, 0.18, 0.023, eyes);
-  sphere(group, 0.075, 1.5, 0.18, 0.023, eyes);
-  const leftLeg = new THREE.Group();
-  const rightLeg = new THREE.Group();
-  for (const [leg, side] of [
-    [leftLeg, -1],
-    [rightLeg, 1],
-  ] as const) {
-    leg.position.set(side * 0.12, 0.68, 0);
-    cylinder(leg, 0, -0.27, 0, 0.09, 0.53, trousers);
-    box(leg, 0, -0.57, 0.045, 0.18, 0.13, 0.29, shoes);
-    group.add(leg);
-  }
-  const leftArm = new THREE.Group();
-  const rightArm = new THREE.Group();
-  for (const [arm, side] of [
-    [leftArm, -1],
-    [rightArm, 1],
-  ] as const) {
-    arm.position.set(side * 0.3, 1.16, 0);
-    cylinder(arm, 0, -0.12, 0, 0.086, 0.28, shirt);
-    cylinder(arm, 0, -0.37, 0, 0.061, 0.24, skin);
-    sphere(arm, 0, -0.51, 0, 0.065, skin);
-    group.add(arm);
-  }
-  // A readable intern lanyard, rather than a floating player marker alone.
-  box(group, 0, 0.97, 0.16, 0.035, 0.29, 0.015, surface("#f2cf73"));
-  box(group, 0, 0.84, 0.18, 0.12, 0.14, 0.025, surface("#faf8ee"));
-  if (hardhat) {
-    const yellow = surface("#f6b945");
-    const helmet = sphere(group, 0, 1.67, 0, 0.235, yellow);
-    helmet.scale.y = 0.52;
-    cylinder(group, 0, 1.65, 0.015, 0.26, 0.025, yellow);
-    box(group, 0, 1.72, 0, 0.035, 0.09, 0.36, yellow);
-  }
-  return { group, leftLeg, rightLeg, leftArm, rightArm, skin, shirt, hair };
 }
 
 function textTexture(
@@ -391,7 +338,10 @@ function chair(
   parent.add(group);
 }
 
-function createWorld(scene: THREE.Scene): {
+function createWorld(
+  scene: THREE.Scene,
+  humans: HumanLibrary,
+): {
   people: Character[];
   delivery: THREE.Group;
   cutaway: THREE.Group;
@@ -664,10 +614,17 @@ function createWorld(scene: THREE.Scene): {
           : target.id === "supplier"
             ? { skin: "#d7a17e", shirt: "#728795", hair: "#583e2b" }
             : { skin: "#bd9579", shirt: "#e79850", hair: "#5c433c" };
-    const person = makeCharacter(
+    const onSite = target.id === "lead" || target.id === "safety";
+    const person = humans.create({
+      id: target.id,
+      body:
+        target.id === "supplier" || target.id === "safety" ? "female" : "male",
       appearance,
-      target.id === "lead" || target.id === "safety",
-    );
+      outfit: onSite ? "construction" : "office",
+      hardhat: onSite,
+      height:
+        target.id === "lead" ? 1.83 : target.id === "supplier" ? 1.69 : 1.75,
+    });
     person.group.position.set(target.x, 0.06, target.z);
     person.group.rotation.y = target.id === "supplier" ? 0.4 : -0.25;
     person.group.userData.targetId = target.id;
@@ -724,662 +681,803 @@ export default function WorldCanvas(props: WorldCanvasProps) {
   const routeRef = useRef<((target: WorldTarget) => void) | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [characterStatus, setCharacterStatus] = useState("loading");
+  const [retryEpoch, setRetryEpoch] = useState(0);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: false,
-        powerPreference: "high-performance",
-      });
-    } catch {
-      setFailure(
-        "Your browser could not start the 3D renderer. You can still explore every source and complete this mission using the accessible workplace route.",
-      );
-      propsRef.current.onReady?.(false);
-      return;
-    }
-    const softwareRenderer = usesSoftwareRenderer(renderer);
-    let lowSpec = !!propsRef.current.lowSpec || softwareRenderer;
-    renderer.setPixelRatio(
-      lowSpec ? 1 : Math.min(window.devicePixelRatio, 1.6),
-    );
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = lowSpec
-      ? THREE.BasicShadowMap
-      : THREE.PCFShadowMap;
-    // The building, NPCs and sun are static. Bake once instead of redrawing their
-    // shadow geometry every frame; the moving player receives a contact shadow.
-    renderer.shadowMap.autoUpdate = false;
-    renderer.shadowMap.needsUpdate = true;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
-    renderer.domElement.setAttribute(
-      "aria-label",
-      "ProjectQuest 3D construction workplace. Move with WASD or arrow keys, drag to orbit the camera, and press E near a person or project tool.",
-    );
-    renderer.domElement.setAttribute("data-testid", "world-canvas");
-    renderer.domElement.setAttribute("tabindex", "0");
-    renderer.domElement.dataset.renderQuality = lowSpec ? "low" : "balanced";
-    renderer.domElement.dataset.shadowQuality = lowSpec
-      ? "basic-512"
-      : "pcf-1024";
-    renderer.domElement.dataset.softwareRenderer = String(softwareRenderer);
-    host.prepend(renderer.domElement);
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#dce8e4");
-    scene.fog = new THREE.Fog("#dce8e4", 28, 70);
-    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
-    const hemisphere = new THREE.HemisphereLight("#f0f9f2", "#738775", 2.2);
-    scene.add(hemisphere);
-    const sun = new THREE.DirectionalLight("#fff1d6", 3.3);
-    sun.position.set(-10, 20, 8);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(lowSpec ? 512 : 1024, lowSpec ? 512 : 1024);
-    sun.shadow.camera.left = -23;
-    sun.shadow.camera.right = 23;
-    sun.shadow.camera.top = 23;
-    sun.shadow.camera.bottom = -23;
-    sun.shadow.normalBias = 0.03;
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight("#bedfe3", 0.6);
-    fill.position.set(14, 9, -10);
-    scene.add(fill);
-    const world = createWorld(scene);
-    const savedDrawCalls = batchStaticGeometry(scene);
-    renderer.domElement.dataset.staticDrawCallsSaved = String(savedDrawCalls);
-    const player = makeCharacter(propsRef.current.appearance);
-    player.group.traverse((object) => {
-      if (object instanceof THREE.Mesh) object.castShadow = false;
-    });
-    scene.add(player.group);
-    const contactCanvas = document.createElement("canvas");
-    contactCanvas.width = 64;
-    contactCanvas.height = 64;
-    const contactContext = contactCanvas.getContext("2d");
-    if (contactContext) {
-      const gradient = contactContext.createRadialGradient(
-        32,
-        32,
-        4,
-        32,
-        32,
-        30,
-      );
-      gradient.addColorStop(0, "#162d335c");
-      gradient.addColorStop(1, "#162d3300");
-      contactContext.fillStyle = gradient;
-      contactContext.fillRect(0, 0, 64, 64);
-    }
-    const contactShadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.1, 1.1),
-      new THREE.MeshBasicMaterial({
-        map: new THREE.CanvasTexture(contactCanvas),
-        transparent: true,
-        depthWrite: false,
-      }),
-    );
-    contactShadow.rotation.x = -Math.PI / 2;
-    scene.add(contactShadow);
-    const position = {
-      ...(propsRef.current.initialPosition ?? DEFAULT_POSITION),
-    };
-    if (!isWalkable(position.x, position.z, WORLD_COLLIDERS))
-      Object.assign(position, DEFAULT_POSITION);
-    player.group.position.set(position.x, 0.06, position.z);
-    player.group.rotation.y = position.yaw;
-    propsRef.current.onPosition({ ...position });
-    const obstacles: Collider[] = [...WORLD_COLLIDERS];
-    for (const target of WORLD_TARGETS)
-      if (!["board", "report"].includes(target.id))
-        obstacles.push({
-          minX: target.x - 0.2,
-          maxX: target.x + 0.2,
-          minZ: target.z - 0.2,
-          maxZ: target.z + 0.2,
+    const controller = new AbortController();
+    let cancelled = false;
+    let disposeWorld: (() => void) | undefined;
+    let library: HumanLibrary | undefined;
+    setReady(false);
+    setFailure(null);
+    setCharacterStatus("loading");
+    propsRef.current.onReady?.(false);
+    function startWorld(humans: HumanLibrary, host: HTMLDivElement) {
+      let renderer: THREE.WebGLRenderer;
+      try {
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
         });
-    const focusRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.58, 0.66, 40),
-      new THREE.MeshBasicMaterial({
-        color: "#ffe6a0",
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9,
-      }),
-    );
-    focusRing.rotation.x = -Math.PI / 2;
-    focusRing.visible = false;
-    scene.add(focusRing);
-    const moveMarker = new THREE.Mesh(
-      new THREE.RingGeometry(0.17, 0.22, 24),
-      new THREE.MeshBasicMaterial({ color: "#185b5b", side: THREE.DoubleSide }),
-    );
-    moveMarker.rotation.x = -Math.PI / 2;
-    moveMarker.visible = false;
-    scene.add(moveMarker);
-    const keys = new Set<string>();
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.06);
-    const rayHit = new THREE.Vector3();
-    let destination: PathPoint | null = null;
-    let waypoints: PathPoint[] = [];
-    let nearby: WorldTarget | null = null;
-    let focusedId: string | null = null;
-    let orbitYaw = 0;
-    let orbitPitch = 0.66;
-    let dragging = false;
-    let pointerStart = { x: 0, y: 0 };
-    let previousPointer = { x: 0, y: 0 };
-    let pointerTravel = 0;
-    let wasActive = propsRef.current.active;
-    let checkpoint = propsRef.current.checkpoint;
-    let lastVisualKey = "";
-    let renderDirty = true;
-    let previous = performance.now();
-    let elapsed = 0;
-    let saveElapsed = 0;
-    let walked = 0;
-    let frame = 0;
-    let lastPosition = { x: position.x, z: position.z, yaw: position.yaw };
-    let appearanceKey = "";
-    let previousOutcome = propsRef.current.outcome;
-    let previousMissionSign = "";
-    let statsStarted = performance.now();
-    let statsFrames = 0;
-    let healthy = true;
-    let stopped = false;
-    const lookAt = new THREE.Vector3();
-    const cameraDesired = new THREE.Vector3();
-    const labelPoint = new THREE.Vector3();
-    const cameraDirection = new THREE.Vector3();
-    const toLabel = new THREE.Vector3();
-
-    const resize = () => {
-      renderDirty = true;
-      const width = Math.max(host.clientWidth, 1);
-      const height = Math.max(host.clientHeight, 1);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(host);
-    resize();
-
-    const interact = (target: WorldTarget) => {
-      if (!propsRef.current.active || propsRef.current.blocked) return;
-      if (
-        Math.hypot(target.x - position.x, target.z - position.z) <=
-        INTERACTION_DISTANCE
-      ) {
-        keys.clear();
-        destination = null;
-        waypoints = [];
-        propsRef.current.onInteract(target.id);
-      }
-    };
-    routeRef.current = (target) => {
-      if (!propsRef.current.active || propsRef.current.blocked) return;
-      if (
-        Math.hypot(target.x - position.x, target.z - position.z) <=
-        INTERACTION_DISTANCE
-      )
-        interact(target);
-      else {
-        // Navigate through real doorways instead of sliding into a wall or desk.
-        const options = [
-          { x: target.x, z: target.z + 1 },
-          { x: target.x - 1, z: target.z },
-          { x: target.x + 1, z: target.z },
-          { x: target.x, z: target.z - 1 },
-        ];
-        const route =
-          options
-            .map((point) => findWalkPath(position, point, obstacles))
-            .find((path) => path.length > 0) ?? [];
-        destination = route.shift() ?? null;
-        waypoints = route;
-      }
-    };
-    const keydown = (event: KeyboardEvent) => {
-      if (
-        !propsRef.current.active ||
-        propsRef.current.blocked ||
-        editableEvent(event)
-      )
-        return;
-      const key = event.key.toLowerCase();
-      if (
-        [
-          "w",
-          "a",
-          "s",
-          "d",
-          "arrowup",
-          "arrowdown",
-          "arrowleft",
-          "arrowright",
-          "shift",
-        ].includes(key)
-      ) {
-        event.preventDefault();
-        keys.add(key);
-        destination = null;
-        waypoints = [];
-      } else if (key === "e" && !event.repeat && nearby) {
-        event.preventDefault();
-        interact(nearby);
-      }
-    };
-    const keyup = (event: KeyboardEvent) =>
-      keys.delete(event.key.toLowerCase());
-    const clearKeys = () => {
-      keys.clear();
-      dragging = false;
-    };
-    const pointerDown = (event: PointerEvent) => {
-      if (
-        event.button !== 0 ||
-        propsRef.current.blocked ||
-        !propsRef.current.active
-      )
-        return;
-      dragging = true;
-      pointerStart = { x: event.clientX, y: event.clientY };
-      previousPointer = pointerStart;
-      pointerTravel = 0;
-      renderer.domElement.focus({ preventScroll: true });
-      renderer.domElement.setPointerCapture(event.pointerId);
-    };
-    const pointerMove = (event: PointerEvent) => {
-      if (!dragging || propsRef.current.blocked) return;
-      const dx = event.clientX - previousPointer.x;
-      const dy = event.clientY - previousPointer.y;
-      pointerTravel += Math.hypot(dx, dy);
-      if (pointerTravel > 5) {
-        orbitYaw -= dx * 0.005;
-        orbitPitch = THREE.MathUtils.clamp(orbitPitch + dy * 0.003, 0.38, 1.05);
-      }
-      previousPointer = { x: event.clientX, y: event.clientY };
-    };
-    const pointerUp = (event: PointerEvent) => {
-      if (!dragging) return;
-      dragging = false;
-      if (renderer.domElement.hasPointerCapture(event.pointerId))
-        renderer.domElement.releasePointerCapture(event.pointerId);
-      if (pointerTravel > 5 || propsRef.current.blocked) return;
-      const rect = renderer.domElement.getBoundingClientRect();
-      pointer.set(
-        ((event.clientX - rect.left) / rect.width) * 2 - 1,
-        -((event.clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(scene.children, true);
-      for (const hit of hits) {
-        let object: THREE.Object3D | null = hit.object;
-        while (object && !object.userData.targetId) object = object.parent;
-        if (object?.userData.targetId) {
-          const target = WORLD_TARGETS.find(
-            (item) => item.id === object?.userData.targetId,
-          );
-          if (target) routeRef.current?.(target);
-          return;
-        }
-      }
-      if (raycaster.ray.intersectPlane(floor, rayHit)) {
-        const route = findWalkPath(
-          position,
-          { x: rayHit.x, z: rayHit.z },
-          obstacles,
+      } catch {
+        setFailure(
+          "Your browser could not start the 3D renderer. You can still explore every source and complete this mission using the accessible workplace route.",
         );
-        destination = route.shift() ?? null;
-        waypoints = route;
-      }
-    };
-    const contextLost = (event: Event) => {
-      event.preventDefault();
-      healthy = false;
-      setReady(false);
-      setFailure(
-        "The 3D graphics context was interrupted. Continue through the accessible workplace route, or reload to restore the world.",
-      );
-      propsRef.current.onReady?.(false);
-    };
-    window.addEventListener("keydown", keydown);
-    window.addEventListener("keyup", keyup);
-    window.addEventListener("blur", clearKeys);
-    renderer.domElement.addEventListener("pointerdown", pointerDown);
-    renderer.domElement.addEventListener("pointermove", pointerMove);
-    renderer.domElement.addEventListener("pointerup", pointerUp);
-    renderer.domElement.addEventListener("pointercancel", clearKeys);
-    renderer.domElement.addEventListener("webglcontextlost", contextLost);
-
-    const render = (timestamp: number) => {
-      if (stopped || !healthy) return;
-      // Collision uses small substeps, so slow foreground frames can retain real movement pace.
-      const dt = Math.min((timestamp - previous) / 1000, 0.25);
-      previous = timestamp;
-      elapsed += dt;
-      saveElapsed += dt;
-      const current = propsRef.current;
-      const visualKey = `${current.active}/${current.blocked}/${current.checkpoint}/${current.lowSpec}/${current.missionDay}/${current.missionResolved}/${current.outcome}/${current.appearance.skin}/${current.appearance.shirt}/${current.appearance.hair}`;
-      // A paused tool/dialog needs one backdrop frame, not continuous expensive GPU work.
-      if (current.blocked && visualKey === lastVisualKey && !renderDirty) {
-        keys.clear();
-        statsStarted = timestamp;
-        statsFrames = 0;
-        frame = requestAnimationFrame(render);
+        propsRef.current.onReady?.(false);
         return;
       }
-      const nextLowSpec = !!current.lowSpec || softwareRenderer;
-      if (nextLowSpec !== lowSpec) {
-        lowSpec = nextLowSpec;
-        renderer.setPixelRatio(
-          lowSpec ? 1 : Math.min(window.devicePixelRatio, 1.6),
-        );
-        renderer.domElement.dataset.renderQuality = lowSpec
-          ? "low"
-          : "balanced";
-        renderer.domElement.dataset.shadowQuality = lowSpec
-          ? "basic-512"
-          : "pcf-1024";
-        renderer.shadowMap.type = lowSpec
-          ? THREE.BasicShadowMap
-          : THREE.PCFShadowMap;
-        sun.shadow.mapSize.set(lowSpec ? 512 : 1024, lowSpec ? 512 : 1024);
-        sun.shadow.map?.dispose();
-        sun.shadow.map = null;
-        renderer.shadowMap.needsUpdate = true;
-      }
-      if (current.active && (!wasActive || checkpoint !== current.checkpoint)) {
-        const loaded = current.initialPosition ?? DEFAULT_POSITION;
-        if (isWalkable(loaded.x, loaded.z, obstacles))
-          Object.assign(position, loaded);
-        else Object.assign(position, DEFAULT_POSITION);
-        orbitYaw = 0;
-        player.group.position.set(position.x, 0.06, position.z);
-        destination = null;
-        waypoints = [];
-        keys.clear();
-        renderer.domElement.focus({ preventScroll: true });
-        current.onPosition({ ...position });
-      }
-      wasActive = current.active;
-      checkpoint = current.checkpoint;
-      world.cutaway.visible = !current.active || position.z >= -6.2;
-      const updatedAppearanceKey = `${current.appearance.skin}${current.appearance.shirt}${current.appearance.hair}`;
-      if (appearanceKey !== updatedAppearanceKey) {
-        player.skin.color.set(current.appearance.skin);
-        player.shirt.color.set(current.appearance.shirt);
-        player.hair.color.set(current.appearance.hair);
-        appearanceKey = updatedAppearanceKey;
-      }
-      let speed = 0;
-      if (current.active && !current.blocked) {
-        const forward =
-          Number(keys.has("w") || keys.has("arrowup")) -
-          Number(keys.has("s") || keys.has("arrowdown"));
-        const right =
-          Number(keys.has("d") || keys.has("arrowright")) -
-          Number(keys.has("a") || keys.has("arrowleft"));
-        let dx = right * Math.cos(orbitYaw) - forward * Math.sin(orbitYaw);
-        let dz = -right * Math.sin(orbitYaw) - forward * Math.cos(orbitYaw);
-        if (destination && !forward && !right) {
-          if (
-            Math.hypot(destination.x - position.x, destination.z - position.z) <
-            0.06
-          ) {
-            position.x = destination.x;
-            position.z = destination.z;
-            destination = waypoints.shift() ?? null;
+      const softwareRenderer = usesSoftwareRenderer(renderer);
+      let lowSpec = !!propsRef.current.lowSpec || softwareRenderer;
+      renderer.setPixelRatio(
+        lowSpec ? 1 : Math.min(window.devicePixelRatio, 1.6),
+      );
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = lowSpec
+        ? THREE.BasicShadowMap
+        : THREE.PCFShadowMap;
+      // The building, NPCs and sun are static. Bake once instead of redrawing their
+      // shadow geometry every frame; the moving player receives a contact shadow.
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      renderer.domElement.setAttribute(
+        "aria-label",
+        "ProjectQuest 3D construction workplace. Move with WASD or arrow keys, drag to orbit the camera, and press E near a person or project tool.",
+      );
+      renderer.domElement.setAttribute("data-testid", "world-canvas");
+      renderer.domElement.setAttribute("tabindex", "0");
+      renderer.domElement.dataset.renderQuality = lowSpec ? "low" : "balanced";
+      renderer.domElement.dataset.shadowQuality = lowSpec
+        ? "basic-512"
+        : "pcf-1024";
+      renderer.domElement.dataset.softwareRenderer = String(softwareRenderer);
+      host.prepend(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#dce8e4");
+      scene.fog = new THREE.Fog("#dce8e4", 28, 70);
+      const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+      const hemisphere = new THREE.HemisphereLight("#f0f9f2", "#738775", 2.2);
+      scene.add(hemisphere);
+      const sun = new THREE.DirectionalLight("#fff1d6", 3.3);
+      sun.position.set(-10, 20, 8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(lowSpec ? 512 : 1024, lowSpec ? 512 : 1024);
+      sun.shadow.camera.left = -23;
+      sun.shadow.camera.right = 23;
+      sun.shadow.camera.top = 23;
+      sun.shadow.camera.bottom = -23;
+      sun.shadow.normalBias = 0.03;
+      scene.add(sun);
+      const fill = new THREE.DirectionalLight("#bedfe3", 0.6);
+      fill.position.set(14, 9, -10);
+      scene.add(fill);
+      const world = createWorld(scene, humans);
+      const savedDrawCalls = batchStaticGeometry(scene);
+      renderer.domElement.dataset.staticDrawCallsSaved = String(savedDrawCalls);
+      let playerBody = propsRef.current.appearance.body ?? "male";
+      let player = humans.create({
+        id: "player",
+        body: playerBody,
+        appearance: propsRef.current.appearance,
+        outfit: "construction",
+        hardhat: true,
+        height: 1.76,
+      });
+      function recordHumanDiagnostics() {
+        const actors = [player, ...world.people];
+        const diagnostics = actors.map((actor) => actor.getDiagnostics());
+        const bones = new Set<THREE.Bone>();
+        let independent = true;
+        for (const actor of actors) {
+          const owned = new Set<THREE.Bone>();
+          actor.group.traverse((object) => {
+            if (object instanceof THREE.SkinnedMesh)
+              object.skeleton.bones.forEach((bone) => owned.add(bone));
+          });
+          for (const bone of owned) {
+            if (bones.has(bone)) independent = false;
+            bones.add(bone);
           }
         }
-        if (destination && !forward && !right) {
-          dx = destination.x - position.x;
-          dz = destination.z - position.z;
+        renderer.domElement.dataset.humanCount = String(actors.length);
+        renderer.domElement.dataset.skinnedMeshCount = String(
+          diagnostics.reduce(
+            (total, actor) => total + actor.skinnedMeshCount,
+            0,
+          ),
+        );
+        renderer.domElement.dataset.characterTriangles = String(
+          diagnostics.reduce((total, actor) => total + actor.triangleCount, 0),
+        );
+        renderer.domElement.dataset.independentSkeletons = String(independent);
+        renderer.domElement.dataset.playerBoneCount = String(
+          diagnostics[0].boneCount,
+        );
+        renderer.domElement.dataset.playerBody = playerBody;
+        renderer.domElement.dataset.characterStatus = "ready";
+      }
+      recordHumanDiagnostics();
+      scene.add(player.group);
+      const contactCanvas = document.createElement("canvas");
+      contactCanvas.width = 64;
+      contactCanvas.height = 64;
+      const contactContext = contactCanvas.getContext("2d");
+      if (contactContext) {
+        const gradient = contactContext.createRadialGradient(
+          32,
+          32,
+          4,
+          32,
+          32,
+          30,
+        );
+        gradient.addColorStop(0, "#162d335c");
+        gradient.addColorStop(1, "#162d3300");
+        contactContext.fillStyle = gradient;
+        contactContext.fillRect(0, 0, 64, 64);
+      }
+      const contactShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.1, 1.1),
+        new THREE.MeshBasicMaterial({
+          map: new THREE.CanvasTexture(contactCanvas),
+          transparent: true,
+          depthWrite: false,
+        }),
+      );
+      contactShadow.rotation.x = -Math.PI / 2;
+      scene.add(contactShadow);
+      const position = {
+        ...(propsRef.current.initialPosition ?? DEFAULT_POSITION),
+      };
+      if (!isWalkable(position.x, position.z, WORLD_COLLIDERS))
+        Object.assign(position, DEFAULT_POSITION);
+      player.group.position.set(position.x, 0.06, position.z);
+      player.group.rotation.y = position.yaw;
+      propsRef.current.onPosition({ ...position });
+      const obstacles: Collider[] = [...WORLD_COLLIDERS];
+      for (const target of WORLD_TARGETS)
+        if (!["board", "report"].includes(target.id))
+          obstacles.push({
+            minX: target.x - 0.2,
+            maxX: target.x + 0.2,
+            minZ: target.z - 0.2,
+            maxZ: target.z + 0.2,
+          });
+      const focusRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.58, 0.66, 40),
+        new THREE.MeshBasicMaterial({
+          color: "#ffe6a0",
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.9,
+        }),
+      );
+      focusRing.rotation.x = -Math.PI / 2;
+      focusRing.visible = false;
+      scene.add(focusRing);
+      const moveMarker = new THREE.Mesh(
+        new THREE.RingGeometry(0.17, 0.22, 24),
+        new THREE.MeshBasicMaterial({
+          color: "#185b5b",
+          side: THREE.DoubleSide,
+        }),
+      );
+      moveMarker.rotation.x = -Math.PI / 2;
+      moveMarker.visible = false;
+      scene.add(moveMarker);
+      const keys = new Set<string>();
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.06);
+      const rayHit = new THREE.Vector3();
+      let destination: PathPoint | null = null;
+      let waypoints: PathPoint[] = [];
+      let nearby: WorldTarget | null = null;
+      let focusedId: string | null = null;
+      let orbitYaw = 0;
+      let orbitPitch = 0.66;
+      let orbitDistance = 9.1;
+      let dragging = false;
+      let pointerStart = { x: 0, y: 0 };
+      let previousPointer = { x: 0, y: 0 };
+      let pointerTravel = 0;
+      let wasActive = propsRef.current.active;
+      let checkpoint = propsRef.current.checkpoint;
+      let lastVisualKey = "";
+      let renderDirty = true;
+      let previous = performance.now();
+      let elapsed = 0;
+      let saveElapsed = 0;
+      let frame = 0;
+      let lastPosition = { x: position.x, z: position.z, yaw: position.yaw };
+      let appearanceKey = "";
+      let previousOutcome = propsRef.current.outcome;
+      let previousMissionSign = "";
+      let statsStarted = performance.now();
+      let statsFrames = 0;
+      let healthy = true;
+      let stopped = false;
+      const lookAt = new THREE.Vector3();
+      const cameraDesired = new THREE.Vector3();
+      const labelPoint = new THREE.Vector3();
+      const cameraDirection = new THREE.Vector3();
+      const toLabel = new THREE.Vector3();
+
+      const resize = () => {
+        renderDirty = true;
+        const width = Math.max(host.clientWidth, 1);
+        const height = Math.max(host.clientHeight, 1);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      };
+      const resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(host);
+      resize();
+
+      const interact = (target: WorldTarget) => {
+        if (!propsRef.current.active || propsRef.current.blocked) return;
+        if (
+          Math.hypot(target.x - position.x, target.z - position.z) <=
+          INTERACTION_DISTANCE
+        ) {
+          keys.clear();
+          destination = null;
+          waypoints = [];
+          propsRef.current.onInteract(target.id);
         }
-        const length = Math.hypot(dx, dz);
-        if (length > 0.001) {
-          speed = keys.has("shift") ? 4.2 : 2.7;
-          const step = destination ? Math.min(speed * dt, length) : speed * dt;
-          const updated = moveWithCollision(
-            position.x,
-            position.z,
-            (dx / length) * step,
-            (dz / length) * step,
+      };
+      routeRef.current = (target) => {
+        if (!propsRef.current.active || propsRef.current.blocked) return;
+        if (
+          Math.hypot(target.x - position.x, target.z - position.z) <=
+          INTERACTION_DISTANCE
+        )
+          interact(target);
+        else {
+          // Navigate through real doorways instead of sliding into a wall or desk.
+          const options = [
+            { x: target.x, z: target.z + 1 },
+            { x: target.x - 1, z: target.z },
+            { x: target.x + 1, z: target.z },
+            { x: target.x, z: target.z - 1 },
+          ];
+          const route =
+            options
+              .map((point) => findWalkPath(position, point, obstacles))
+              .find((path) => path.length > 0) ?? [];
+          destination = route.shift() ?? null;
+          waypoints = route;
+        }
+      };
+      const keydown = (event: KeyboardEvent) => {
+        if (
+          !propsRef.current.active ||
+          propsRef.current.blocked ||
+          editableEvent(event)
+        )
+          return;
+        const key = event.key.toLowerCase();
+        if (
+          [
+            "w",
+            "a",
+            "s",
+            "d",
+            "arrowup",
+            "arrowdown",
+            "arrowleft",
+            "arrowright",
+            "shift",
+          ].includes(key)
+        ) {
+          event.preventDefault();
+          keys.add(key);
+          destination = null;
+          waypoints = [];
+        } else if (key === "e" && !event.repeat && nearby) {
+          event.preventDefault();
+          interact(nearby);
+        }
+      };
+      const keyup = (event: KeyboardEvent) =>
+        keys.delete(event.key.toLowerCase());
+      const clearKeys = () => {
+        keys.clear();
+        dragging = false;
+      };
+      const pointerDown = (event: PointerEvent) => {
+        if (
+          event.button !== 0 ||
+          propsRef.current.blocked ||
+          !propsRef.current.active
+        )
+          return;
+        dragging = true;
+        pointerStart = { x: event.clientX, y: event.clientY };
+        previousPointer = pointerStart;
+        pointerTravel = 0;
+        renderer.domElement.focus({ preventScroll: true });
+        renderer.domElement.setPointerCapture(event.pointerId);
+      };
+      const pointerMove = (event: PointerEvent) => {
+        if (!dragging || propsRef.current.blocked) return;
+        const dx = event.clientX - previousPointer.x;
+        const dy = event.clientY - previousPointer.y;
+        pointerTravel += Math.hypot(dx, dy);
+        if (pointerTravel > 5) {
+          orbitYaw -= dx * 0.005;
+          orbitPitch = THREE.MathUtils.clamp(
+            orbitPitch + dy * 0.003,
+            0.38,
+            1.05,
+          );
+        }
+        previousPointer = { x: event.clientX, y: event.clientY };
+      };
+      const pointerUp = (event: PointerEvent) => {
+        if (!dragging) return;
+        dragging = false;
+        if (renderer.domElement.hasPointerCapture(event.pointerId))
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        if (pointerTravel > 5 || propsRef.current.blocked) return;
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.set(
+          ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          -((event.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(scene.children, true);
+        for (const hit of hits) {
+          let object: THREE.Object3D | null = hit.object;
+          while (object && !object.userData.targetId) object = object.parent;
+          if (object?.userData.targetId) {
+            const target = WORLD_TARGETS.find(
+              (item) => item.id === object?.userData.targetId,
+            );
+            if (target) routeRef.current?.(target);
+            return;
+          }
+        }
+        if (raycaster.ray.intersectPlane(floor, rayHit)) {
+          const route = findWalkPath(
+            position,
+            { x: rayHit.x, z: rayHit.z },
             obstacles,
           );
-          const movement = Math.hypot(
-            updated.x - position.x,
-            updated.z - position.z,
+          destination = route.shift() ?? null;
+          waypoints = route;
+        }
+      };
+      const contextLost = (event: Event) => {
+        event.preventDefault();
+        healthy = false;
+        setReady(false);
+        setFailure(
+          "The 3D graphics context was interrupted. Continue through the accessible workplace route, or reload to restore the world.",
+        );
+        propsRef.current.onReady?.(false);
+      };
+      window.addEventListener("keydown", keydown);
+      window.addEventListener("keyup", keyup);
+      window.addEventListener("blur", clearKeys);
+      const wheel = (event: WheelEvent) => {
+        if (!propsRef.current.active || propsRef.current.blocked) return;
+        event.preventDefault();
+        orbitDistance = THREE.MathUtils.clamp(
+          orbitDistance + event.deltaY * 0.008,
+          3.2,
+          12,
+        );
+        renderDirty = true;
+      };
+      renderer.domElement.addEventListener("wheel", wheel, { passive: false });
+      renderer.domElement.addEventListener("pointerdown", pointerDown);
+      renderer.domElement.addEventListener("pointermove", pointerMove);
+      renderer.domElement.addEventListener("pointerup", pointerUp);
+      renderer.domElement.addEventListener("pointercancel", clearKeys);
+      renderer.domElement.addEventListener("webglcontextlost", contextLost);
+
+      const render = (timestamp: number) => {
+        if (stopped || !healthy) return;
+        // Collision uses small substeps, so slow foreground frames can retain real movement pace.
+        const dt = Math.min((timestamp - previous) / 1000, 0.25);
+        previous = timestamp;
+        elapsed += dt;
+        saveElapsed += dt;
+        const current = propsRef.current;
+        const visualKey = `${current.active}/${current.blocked}/${current.checkpoint}/${current.lowSpec}/${current.missionDay}/${current.missionResolved}/${current.outcome}/${current.appearance.skin}/${current.appearance.shirt}/${current.appearance.hair}/${current.appearance.body ?? "male"}`;
+        // A paused tool/dialog needs one backdrop frame, not continuous expensive GPU work.
+        if (current.blocked && visualKey === lastVisualKey && !renderDirty) {
+          keys.clear();
+          statsStarted = timestamp;
+          statsFrames = 0;
+          frame = requestAnimationFrame(render);
+          return;
+        }
+        const nextLowSpec = !!current.lowSpec || softwareRenderer;
+        if (nextLowSpec !== lowSpec) {
+          lowSpec = nextLowSpec;
+          renderer.setPixelRatio(
+            lowSpec ? 1 : Math.min(window.devicePixelRatio, 1.6),
           );
-          walked += movement;
-          if (destination && movement < 0.001) {
-            destination = null;
-            waypoints = [];
-          }
-          position.x = updated.x;
-          position.z = updated.z;
-          position.yaw = shortestAngle(
-            position.yaw,
-            Math.atan2(dx, dz),
-            1 - Math.exp(-dt * 14),
-          );
-          player.group.rotation.y = position.yaw;
+          renderer.domElement.dataset.renderQuality = lowSpec
+            ? "low"
+            : "balanced";
+          renderer.domElement.dataset.shadowQuality = lowSpec
+            ? "basic-512"
+            : "pcf-1024";
+          renderer.shadowMap.type = lowSpec
+            ? THREE.BasicShadowMap
+            : THREE.PCFShadowMap;
+          sun.shadow.mapSize.set(lowSpec ? 512 : 1024, lowSpec ? 512 : 1024);
+          sun.shadow.map?.dispose();
+          sun.shadow.map = null;
+          renderer.shadowMap.needsUpdate = true;
         }
-      } else {
-        keys.clear();
-        destination = null;
-        waypoints = [];
-      }
-      player.group.visible = current.active;
-      contactShadow.visible = current.active;
-      contactShadow.position.set(position.x, 0.068, position.z);
-      player.group.position.set(
-        position.x,
-        0.06 +
-          (speed && !current.reducedMotion
-            ? Math.abs(Math.sin(walked * 5)) * 0.025
-            : 0),
-        position.z,
-      );
-      const stride = speed ? Math.sin(walked * 5.8) * 0.44 : 0;
-      player.leftLeg.rotation.x = stride;
-      player.rightLeg.rotation.x = -stride;
-      player.leftArm.rotation.x = -stride * 0.7;
-      player.rightArm.rotation.x = stride * 0.7;
-      if (!current.reducedMotion && !lowSpec)
-        for (let index = 0; index < world.people.length; index++) {
-          const person = world.people[index];
-          person.leftArm.rotation.z =
-            -0.035 + Math.sin(elapsed * 1.3 + index) * 0.025;
-          person.rightArm.rotation.z =
-            0.035 + Math.sin(elapsed * 1.3 + index + 1) * 0.025;
-        }
-      const missionSignKey = `${current.missionDay ?? 1}/${Boolean(current.missionResolved)}`;
-      if (previousMissionSign !== missionSignKey) {
-        previousMissionSign = missionSignKey;
-        const missionDay = current.missionDay ?? 1;
-        const replaceSign = (mesh: THREE.Mesh, text: string) => {
-          const material = mesh.material as THREE.MeshBasicMaterial;
-          material.map?.dispose();
-          material.map = textTexture(text, 1024, 256, PALETTE.dark);
-          material.needsUpdate = true;
-        };
-        replaceSign(
-          world.missionSign,
-          missionDay === 2 ? "THE SLIPPING MILESTONE" : "THE MISSING MATERIALS",
-        );
-        replaceSign(
-          world.siteSign,
-          missionDay === 2
-            ? current.missionResolved
-              ? "SEQUENCE REVIEWED  ·  ACCEPTANCE RETAINED"
-              : "SURVEY RELEASE  ·  TWO TEAMS WAIT"
-            : current.missionResolved
-              ? "DELIVERY CHECKPOINT  ·  REVIEW RECORDED"
-              : "FOUNDATIONS  ·  DELIVERY PENDING",
-        );
-      }
-      world.delivery.visible = current.outcome === "alternate";
-      if (previousOutcome !== current.outcome) {
-        previousOutcome = current.outcome;
-        renderer.shadowMap.needsUpdate = true;
-      }
-      nearby = null;
-      if (current.active && !current.blocked) {
-        let distance = INTERACTION_DISTANCE;
-        for (const target of WORLD_TARGETS) {
-          const next = Math.hypot(target.x - position.x, target.z - position.z);
-          if (next < distance) {
-            distance = next;
-            nearby = target;
-          }
-        }
-      }
-      if ((nearby?.id ?? null) !== focusedId) {
-        focusedId = nearby?.id ?? null;
-        current.onFocus(nearby);
-      }
-      renderer.domElement.dataset.nearbyId = focusedId ?? "";
-      renderer.domElement.dataset.playerX = position.x.toFixed(2);
-      renderer.domElement.dataset.playerZ = position.z.toFixed(2);
-      renderer.domElement.dataset.playerYaw = position.yaw.toFixed(2);
-      renderer.domElement.dataset.routeWaypoints = String(
-        waypoints.length + Number(!!destination),
-      );
-      focusRing.visible = !!nearby;
-      if (nearby) focusRing.position.set(nearby.x, 0.07, nearby.z);
-      moveMarker.visible = !!destination;
-      if (destination) {
-        const goal = waypoints.at(-1) ?? destination;
-        moveMarker.position.set(goal.x, 0.08, goal.z);
-      }
-      if (current.active) {
-        const radius = 9.1;
-        lookAt.set(position.x, 0.9, position.z);
-        cameraDesired.set(
-          position.x + Math.sin(orbitYaw) * radius * Math.cos(orbitPitch),
-          0.9 + Math.sin(orbitPitch) * radius,
-          position.z + Math.cos(orbitYaw) * radius * Math.cos(orbitPitch),
-        );
-      } else {
-        const menuOrbit = current.reducedMotion
-          ? 0.38
-          : 0.38 + Math.sin(elapsed * 0.045) * 0.08;
-        lookAt.set(0, 0.6, -3);
-        cameraDesired.set(
-          24 * Math.sin(menuOrbit),
-          17.5,
-          24 * Math.cos(menuOrbit) - 3,
-        );
-      }
-      camera.position.lerp(
-        cameraDesired,
-        current.reducedMotion ? 1 : 1 - Math.exp(-dt * 7),
-      );
-      camera.lookAt(lookAt);
-      camera.getWorldDirection(cameraDirection);
-      for (const target of WORLD_TARGETS) {
-        const label = labelsRef.current.get(target.id);
-        if (!label) continue;
-        labelPoint.set(target.x, target.id === "board" ? 2.7 : 2.45, target.z);
-        toLabel.copy(labelPoint).sub(camera.position);
-        const inFront = toLabel.dot(cameraDirection) > 0;
-        labelPoint.project(camera);
-        const visible =
-          current.active &&
-          !current.blocked &&
-          inFront &&
-          Math.abs(labelPoint.x) < 1.06 &&
-          Math.abs(labelPoint.y) < 1.06 &&
-          labelPoint.z < 1;
-        label.style.visibility = visible ? "visible" : "hidden";
-        label.style.transform = `translate(-50%, -100%) translate(${(labelPoint.x * 0.5 + 0.5) * host.clientWidth}px, ${(-labelPoint.y * 0.5 + 0.5) * host.clientHeight}px)`;
-        label.dataset.nearby = String(target.id === focusedId);
-        label.setAttribute(
-          "aria-label",
-          Math.hypot(target.x - position.x, target.z - position.z) <
-            INTERACTION_DISTANCE
-            ? target.keyLabel
-            : `Walk toward ${target.name}`,
-        );
-      }
-      if (saveElapsed > 0.5 && current.active) {
         if (
-          Math.hypot(lastPosition.x - position.x, lastPosition.z - position.z) >
-            0.025 ||
-          Math.abs(lastPosition.yaw - position.yaw) > 0.025
+          current.active &&
+          (!wasActive || checkpoint !== current.checkpoint)
         ) {
-          lastPosition = { ...position };
+          const loaded = current.initialPosition ?? DEFAULT_POSITION;
+          if (isWalkable(loaded.x, loaded.z, obstacles))
+            Object.assign(position, loaded);
+          else Object.assign(position, DEFAULT_POSITION);
+          orbitYaw = 0;
+          player.group.position.set(position.x, 0.06, position.z);
+          destination = null;
+          waypoints = [];
+          keys.clear();
+          renderer.domElement.focus({ preventScroll: true });
           current.onPosition({ ...position });
         }
-        saveElapsed = 0;
-      }
-      renderer.render(scene, camera);
-      lastVisualKey = visualKey;
-      renderDirty = false;
-      statsFrames++;
-      if (timestamp - statsStarted >= 2000) {
-        renderer.domElement.dataset.fpsEstimate = (
-          (statsFrames * 1000) /
-          (timestamp - statsStarted)
-        ).toFixed(1);
-        renderer.domElement.dataset.renderCalls = String(
-          renderer.info.render.calls,
-        );
-        statsFrames = 0;
-        statsStarted = timestamp;
-      }
-      frame = requestAnimationFrame(render);
-    };
-    camera.position.set(10, 17.5, 22);
-    setReady(true);
-    propsRef.current.onReady?.(true);
-    frame = requestAnimationFrame(render);
-
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(frame);
-      resizeObserver.disconnect();
-      routeRef.current = null;
-      window.removeEventListener("keydown", keydown);
-      window.removeEventListener("keyup", keyup);
-      window.removeEventListener("blur", clearKeys);
-      renderer.domElement.removeEventListener("pointerdown", pointerDown);
-      renderer.domElement.removeEventListener("pointermove", pointerMove);
-      renderer.domElement.removeEventListener("pointerup", pointerUp);
-      renderer.domElement.removeEventListener("pointercancel", clearKeys);
-      renderer.domElement.removeEventListener("webglcontextlost", contextLost);
-      const geometries = new Set<THREE.BufferGeometry>();
-      const materials = new Set<THREE.Material>();
-      const textures = new Set<THREE.Texture>();
-      scene.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        geometries.add(object.geometry);
-        for (const material of Array.isArray(object.material)
-          ? object.material
-          : [object.material]) {
-          materials.add(material);
-          const mapped = material as THREE.MeshBasicMaterial;
-          if (mapped.map) textures.add(mapped.map);
+        wasActive = current.active;
+        checkpoint = current.checkpoint;
+        world.cutaway.visible = !current.active || position.z >= -6.2;
+        const updatedAppearanceKey = `${current.appearance.skin}${current.appearance.shirt}${current.appearance.hair}${current.appearance.body ?? "male"}`;
+        if (appearanceKey !== updatedAppearanceKey) {
+          const nextBody = current.appearance.body ?? "male";
+          if (nextBody !== playerBody) {
+            player.dispose();
+            playerBody = nextBody;
+            player = humans.create({
+              id: "player",
+              body: playerBody,
+              appearance: current.appearance,
+              outfit: "construction",
+              hardhat: true,
+              height: 1.76,
+            });
+            player.group.rotation.y = position.yaw;
+            scene.add(player.group);
+            recordHumanDiagnostics();
+          }
+          player.setAppearance(current.appearance);
+          appearanceKey = updatedAppearanceKey;
         }
+        let actualSpeed = 0;
+        if (current.active && !current.blocked) {
+          const forward =
+            Number(keys.has("w") || keys.has("arrowup")) -
+            Number(keys.has("s") || keys.has("arrowdown"));
+          const right =
+            Number(keys.has("d") || keys.has("arrowright")) -
+            Number(keys.has("a") || keys.has("arrowleft"));
+          let dx = right * Math.cos(orbitYaw) - forward * Math.sin(orbitYaw);
+          let dz = -right * Math.sin(orbitYaw) - forward * Math.cos(orbitYaw);
+          if (destination && !forward && !right) {
+            if (
+              Math.hypot(
+                destination.x - position.x,
+                destination.z - position.z,
+              ) < 0.06
+            ) {
+              position.x = destination.x;
+              position.z = destination.z;
+              destination = waypoints.shift() ?? null;
+            }
+          }
+          if (destination && !forward && !right) {
+            dx = destination.x - position.x;
+            dz = destination.z - position.z;
+          }
+          const length = Math.hypot(dx, dz);
+          if (length > 0.001) {
+            const speed = keys.has("shift") ? 4.2 : 2.7;
+            const step = destination
+              ? Math.min(speed * dt, length)
+              : speed * dt;
+            const updated = moveWithCollision(
+              position.x,
+              position.z,
+              (dx / length) * step,
+              (dz / length) * step,
+              obstacles,
+            );
+            const movement = Math.hypot(
+              updated.x - position.x,
+              updated.z - position.z,
+            );
+            actualSpeed = movement / Math.max(dt, 0.001);
+            if (destination && movement < 0.001) {
+              destination = null;
+              waypoints = [];
+            }
+            position.x = updated.x;
+            position.z = updated.z;
+            position.yaw = shortestAngle(
+              position.yaw,
+              Math.atan2(dx, dz),
+              1 - Math.exp(-dt * 14),
+            );
+            player.group.rotation.y = position.yaw;
+          }
+        } else {
+          keys.clear();
+          destination = null;
+          waypoints = [];
+        }
+        player.group.visible = current.active;
+        contactShadow.visible = current.active;
+        contactShadow.position.set(position.x, 0.068, position.z);
+        player.group.position.set(position.x, 0.06, position.z);
+        player.update(dt, actualSpeed, current.reducedMotion, current.blocked);
+        for (const person of world.people)
+          person.update(dt, 0, current.reducedMotion, current.blocked);
+        const animation = player.getDiagnostics();
+        renderer.domElement.dataset.playerAnimation =
+          animation.currentAnimation;
+        renderer.domElement.dataset.playerAnimationTime =
+          animation.animationTime.toFixed(4);
+        renderer.domElement.dataset.playerMixerTime =
+          animation.mixerTime.toFixed(4);
+        renderer.domElement.dataset.playerWalkWeight =
+          animation.walkWeight.toFixed(4);
+        renderer.domElement.dataset.playerSpeed = actualSpeed.toFixed(3);
+        renderer.domElement.dataset.cameraDistance = orbitDistance.toFixed(2);
+        renderer.domElement.dataset.cameraOrbit = orbitYaw.toFixed(3);
+        renderer.domElement.dataset.playerSkin = current.appearance.skin;
+        renderer.domElement.dataset.playerShirt = current.appearance.shirt;
+        renderer.domElement.dataset.playerHair = current.appearance.hair;
+        const missionSignKey = `${current.missionDay ?? 1}/${Boolean(current.missionResolved)}`;
+        if (previousMissionSign !== missionSignKey) {
+          previousMissionSign = missionSignKey;
+          const missionDay = current.missionDay ?? 1;
+          const replaceSign = (mesh: THREE.Mesh, text: string) => {
+            const material = mesh.material as THREE.MeshBasicMaterial;
+            material.map?.dispose();
+            material.map = textTexture(text, 1024, 256, PALETTE.dark);
+            material.needsUpdate = true;
+          };
+          replaceSign(
+            world.missionSign,
+            missionDay === 2
+              ? "THE SLIPPING MILESTONE"
+              : "THE MISSING MATERIALS",
+          );
+          replaceSign(
+            world.siteSign,
+            missionDay === 2
+              ? current.missionResolved
+                ? "SEQUENCE REVIEWED  ·  ACCEPTANCE RETAINED"
+                : "SURVEY RELEASE  ·  TWO TEAMS WAIT"
+              : current.missionResolved
+                ? "DELIVERY CHECKPOINT  ·  REVIEW RECORDED"
+                : "FOUNDATIONS  ·  DELIVERY PENDING",
+          );
+        }
+        world.delivery.visible = current.outcome === "alternate";
+        if (previousOutcome !== current.outcome) {
+          previousOutcome = current.outcome;
+          renderer.shadowMap.needsUpdate = true;
+        }
+        nearby = null;
+        if (current.active && !current.blocked) {
+          let distance = INTERACTION_DISTANCE;
+          for (const target of WORLD_TARGETS) {
+            const next = Math.hypot(
+              target.x - position.x,
+              target.z - position.z,
+            );
+            if (next < distance) {
+              distance = next;
+              nearby = target;
+            }
+          }
+        }
+        if ((nearby?.id ?? null) !== focusedId) {
+          focusedId = nearby?.id ?? null;
+          current.onFocus(nearby);
+        }
+        renderer.domElement.dataset.nearbyId = focusedId ?? "";
+        renderer.domElement.dataset.playerX = position.x.toFixed(2);
+        renderer.domElement.dataset.playerZ = position.z.toFixed(2);
+        renderer.domElement.dataset.playerYaw = position.yaw.toFixed(2);
+        renderer.domElement.dataset.routeWaypoints = String(
+          waypoints.length + Number(!!destination),
+        );
+        focusRing.visible = !!nearby;
+        if (nearby) focusRing.position.set(nearby.x, 0.07, nearby.z);
+        moveMarker.visible = !!destination;
+        if (destination) {
+          const goal = waypoints.at(-1) ?? destination;
+          moveMarker.position.set(goal.x, 0.08, goal.z);
+        }
+        if (current.active) {
+          const radius = orbitDistance;
+          lookAt.set(position.x, 0.9, position.z);
+          cameraDesired.set(
+            position.x + Math.sin(orbitYaw) * radius * Math.cos(orbitPitch),
+            0.9 + Math.sin(orbitPitch) * radius,
+            position.z + Math.cos(orbitYaw) * radius * Math.cos(orbitPitch),
+          );
+        } else {
+          const menuOrbit = current.reducedMotion
+            ? 0.38
+            : 0.38 + Math.sin(elapsed * 0.045) * 0.08;
+          lookAt.set(0, 0.6, -3);
+          cameraDesired.set(
+            24 * Math.sin(menuOrbit),
+            17.5,
+            24 * Math.cos(menuOrbit) - 3,
+          );
+        }
+        camera.position.lerp(
+          cameraDesired,
+          current.reducedMotion ? 1 : 1 - Math.exp(-dt * 7),
+        );
+        camera.lookAt(lookAt);
+        camera.getWorldDirection(cameraDirection);
+        for (const target of WORLD_TARGETS) {
+          const label = labelsRef.current.get(target.id);
+          if (!label) continue;
+          labelPoint.set(
+            target.x,
+            target.id === "board" ? 2.7 : 2.45,
+            target.z,
+          );
+          toLabel.copy(labelPoint).sub(camera.position);
+          const inFront = toLabel.dot(cameraDirection) > 0;
+          labelPoint.project(camera);
+          const visible =
+            current.active &&
+            !current.blocked &&
+            inFront &&
+            Math.abs(labelPoint.x) < 1.06 &&
+            Math.abs(labelPoint.y) < 1.06 &&
+            labelPoint.z < 1;
+          label.style.visibility = visible ? "visible" : "hidden";
+          label.style.transform = `translate(-50%, -100%) translate(${(labelPoint.x * 0.5 + 0.5) * host.clientWidth}px, ${(-labelPoint.y * 0.5 + 0.5) * host.clientHeight}px)`;
+          label.dataset.nearby = String(target.id === focusedId);
+          label.setAttribute(
+            "aria-label",
+            Math.hypot(target.x - position.x, target.z - position.z) <
+              INTERACTION_DISTANCE
+              ? target.keyLabel
+              : `Walk toward ${target.name}`,
+          );
+        }
+        if (saveElapsed > 0.5 && current.active) {
+          if (
+            Math.hypot(
+              lastPosition.x - position.x,
+              lastPosition.z - position.z,
+            ) > 0.025 ||
+            Math.abs(lastPosition.yaw - position.yaw) > 0.025
+          ) {
+            lastPosition = { ...position };
+            current.onPosition({ ...position });
+          }
+          saveElapsed = 0;
+        }
+        renderer.render(scene, camera);
+        lastVisualKey = visualKey;
+        renderDirty = false;
+        statsFrames++;
+        if (timestamp - statsStarted >= 2000) {
+          renderer.domElement.dataset.fpsEstimate = (
+            (statsFrames * 1000) /
+            (timestamp - statsStarted)
+          ).toFixed(1);
+          renderer.domElement.dataset.renderCalls = String(
+            renderer.info.render.calls,
+          );
+          statsFrames = 0;
+          statsStarted = timestamp;
+        }
+        frame = requestAnimationFrame(render);
+      };
+      camera.position.set(10, 17.5, 22);
+      setReady(true);
+      setCharacterStatus("ready");
+      propsRef.current.onReady?.(true);
+      frame = requestAnimationFrame(render);
+
+      return () => {
+        stopped = true;
+        cancelAnimationFrame(frame);
+        resizeObserver.disconnect();
+        routeRef.current = null;
+        window.removeEventListener("keydown", keydown);
+        window.removeEventListener("keyup", keyup);
+        window.removeEventListener("blur", clearKeys);
+        renderer.domElement.removeEventListener("wheel", wheel);
+        renderer.domElement.removeEventListener("pointerdown", pointerDown);
+        renderer.domElement.removeEventListener("pointermove", pointerMove);
+        renderer.domElement.removeEventListener("pointerup", pointerUp);
+        renderer.domElement.removeEventListener("pointercancel", clearKeys);
+        renderer.domElement.removeEventListener(
+          "webglcontextlost",
+          contextLost,
+        );
+        player.dispose();
+        world.people.forEach((person) => person.dispose());
+        const geometries = new Set<THREE.BufferGeometry>();
+        const materials = new Set<THREE.Material>();
+        const textures = new Set<THREE.Texture>();
+        scene.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          geometries.add(object.geometry);
+          for (const material of Array.isArray(object.material)
+            ? object.material
+            : [object.material]) {
+            materials.add(material);
+            for (const value of Object.values(material))
+              if (value instanceof THREE.Texture) textures.add(value);
+          }
+        });
+        geometries.forEach((geometry) => geometry.dispose());
+        materials.forEach((material) => material.dispose());
+        textures.forEach((texture) => texture.dispose());
+        renderer.dispose();
+        renderer.domElement.remove();
+      };
+    }
+    void loadHumanLibrary({ signal: controller.signal })
+      .then((loaded) => {
+        if (cancelled) {
+          loaded.dispose();
+          return;
+        }
+        library = loaded;
+        disposeWorld = startWorld(loaded, host);
+        if (!disposeWorld) {
+          loaded.dispose();
+          library = undefined;
+          setCharacterStatus("error");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        library?.dispose();
+        setReady(false);
+        setCharacterStatus("error");
+        setFailure(
+          "The 3D characters could not be loaded. Retry the workplace, or continue with the accessible route while you check your connection.",
+        );
+        propsRef.current.onReady?.(false);
       });
-      geometries.forEach((geometry) => geometry.dispose());
-      materials.forEach((material) => material.dispose());
-      textures.forEach((texture) => texture.dispose());
-      renderer.dispose();
-      renderer.domElement.remove();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      disposeWorld?.();
+      library?.dispose();
     };
-  }, []);
+  }, [retryEpoch]);
 
   return (
-    <div className="pq-world" ref={hostRef} data-world-ready={ready}>
+    <div
+      className="pq-world"
+      ref={hostRef}
+      data-world-ready={ready}
+      data-character-status={characterStatus}
+    >
       {!ready && !failure && (
         <div className="pq-world-loading" role="status">
           <span />
@@ -1418,6 +1516,13 @@ export default function WorldCanvas(props: WorldCanvasProps) {
           </span>
           <h2>Your workplace, within reach</h2>
           <p>{failure}</p>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => setRetryEpoch((value) => value + 1)}
+          >
+            Retry 3D workplace
+          </button>
           {props.active && (
             <div className="pq-world-fallback-routes">
               {WORLD_TARGETS.map((target) => (

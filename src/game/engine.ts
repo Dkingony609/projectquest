@@ -99,6 +99,7 @@ export function createGame(profile: Profile): GameState {
       name: profile.name.trim(),
       industry: "construction",
       appearance: {
+        ...(profile.appearance.body ? { body: profile.appearance.body } : {}),
         skin: profile.appearance.skin,
         shirt: profile.appearance.shirt,
         hair: profile.appearance.hair,

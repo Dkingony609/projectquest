@@ -9,3 +9,8 @@ coverage/
 .env.*
 !.env.example
 *.log
+
+# Offline character production cache
+.cache/
+__pycache__/
+*.py[cod]

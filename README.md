@@ -10,7 +10,7 @@ The construction internship has two playable chapters. In **The Missing Material
 
 Day 2 uses a working scheduling tool: edit four task durations and predecessor links, trace a survey that blocks two activities, and recalculate the foundation forecast. Sam supplies the verified duration, Taylor confirms acceptance gates, and Alex reviews the recommendation before the deliberate 11:00 checkpoint. Both chapters end with causal, source-cited feedback and saved case studies.
 
-Construction is the only playable industry. Software and the other four sectors remain future content. Day 3, **The Stakeholder Check-in**, the remainder of the first week, promotions beyond intern and the full career simulation remain on the [roadmap](docs/roadmap.md). Production character/environment assets, learner playtests, subject-matter review and representative-hardware benchmarks are still outstanding. Original music and self-hosted fonts are included.
+Construction is the only playable industry. Software and the other four sectors remain future content. Day 3, **The Stakeholder Check-in**, the remainder of the first week, promotions beyond intern and the full career simulation remain on the [roadmap](docs/roadmap.md). Broader character/environment art, learner playtests, subject-matter review and representative-hardware benchmarks are still outstanding. Original music and self-hosted fonts are included.
 
 Development is on `feat/projectquest-browser`; `main` has not been merged and no public deployment is implied. See [verification](docs/verification.md) for completed validation runs and checked remote commits. Test counts belong to the recorded run, not to this feature summary.
 
@@ -51,6 +51,7 @@ The game is on `feat/projectquest-browser`; `main` remains unchanged until a sep
 | ------------------------------------- | ----------------------------------------------------------- |
 | WASD / arrow keys                     | Walk with collision                                         |
 | Drag the world                        | Orbit the third-person camera                               |
+| Mouse wheel                           | Zoom the third-person camera                                |
 | Click ground / a labelled world route | Walk along a path around obstacles                          |
 | E / contextual interaction button     | Interact with a nearby colleague or station                 |
 | T                                     | Open the portable project tablet for the current assignment |
@@ -90,10 +91,16 @@ If Chromium is already installed, skip its download and use `CHROMIUM_PATH=/usr/
 - [Testing](docs/testing.md): automated checks and human playtest gates.
 - [Decision log](docs/decisions.md): technology, scope, art and accessibility decisions.
 
-Original temporary procedural geometry is used for the current workplace. Bespoke characters, richer environment assets, animation and a broader reviewed audio library remain production work. This game teaches general skills; it does not award professional accreditation.
+Original temporary procedural geometry is used for the current workplace. The player and all NPCs now use textured, rigged human assets with idle/walk animation. Richer environment art, broader character identities and a reviewed audio library remain production work. This game teaches general skills; it does not award professional accreditation.
 
 ## Sound, typography and committed decisions
 
 An original 78 BPM, 32-bar instrumental score (piano, pad, bass and brushed percussion) starts after your first interaction. Settings provide independent music/effects volume and mute; hidden tabs suspend audio. All relevant sound cues also have visible feedback. Audio and the new Manrope/DM Serif Display fonts are self-hosted with no external runtime service. Font licences are in `public/fonts`; the original score recipe is in `src/audio`.
 
 The original composition and sound effects accompany both chapters. Audio starts after a user gesture and remains optional; every relevant cue has visible feedback. Legacy progress retains its recorded consequences when it is migrated and continued.
+
+## Rigged human characters (v0.3.0)
+
+Both selectable body types and all four NPCs use actual 3D human meshes, textured faces, fingers, clothing and independently animated skeletons. The character creator previews the same assets with full-body, face and hand views. Existing appearances and old saves remain supported. Shared office, site/PPE, clinical, events, manufacturing and energy outfits support future content; construction is still the only playable industry.
+
+Models are bundled locally; no Blender installation or asset service is required to play. The [character guide](docs/characters.md) explains animation, lifecycle, outfits and limits. [Asset notices](public/models/humans/NOTICE.md), CC0 terms and checksums accompany the files; optional [authoring instructions](scripts/characters/README.md) preserve the build recipe.

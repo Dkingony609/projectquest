@@ -97,3 +97,11 @@ New saves use envelope schema 2 while retaining the existing localStorage key. A
 **Decision:** Bundle the original “First Light at Riverside” instrumental score and authored effects, plus Manrope and DM Serif Display WOFF2 fonts with licence notices. Start audio only after a user gesture, persist independent music/effects preferences, suspend hidden-tab audio and provide visible feedback for meaningful cues.
 
 **Consequence:** Gameplay needs no streaming, font service or audio-generation dependency. Audio remains optional. Python, NumPy and ffmpeg are score-authoring tools rather than application prerequisites. The bundled composition and signal/browser checks do not replace listening review or the broader production asset roadmap; provenance is recorded in `src/audio/README.md` and `public/fonts/README.md`.
+
+## ADR 012 — Replace primitive people with licensed anatomical humans
+
+**Status:** Accepted; supersedes ADR 006 for characters.
+
+**Decision:** Bundle optimised MakeHuman CC0 anatomical meshes, UV textures, game rigs and clothing as two GLBs. Author in-place idle/walk motion, site PPE and clinical variants in an optional Blender/MPFB pipeline. Give each actor an independent skeleton/material instance; share geometry and textures within a scene. Keep movement, collision, dialogue and camera authority in their existing systems. Use the same real assets for the character creator.
+
+**Consequence:** Believable human proportions, faces and fingers replace box geometry without introducing a runtime asset service. GPL authoring code is separate from CC0 graphical assets and is not vendored. Optional saved body type supports old careers unchanged. Broader face/hair identity choices, facial animation and representative-device performance validation remain future work. Sources and exact limitations are in [characters.md](characters.md).

@@ -1,0 +1,26 @@
+{
+  "asset": "human-female.glb",
+  "bodyHeightMetres": 1.75,
+  "bones": 53,
+  "vertices": 20512,
+  "triangles": 38026,
+  "meshes": {
+    "Body": 17012,
+    "Shirt": 2524,
+    "Trousers": 1712,
+    "Shoes": 3104,
+    "Eyes": 172,
+    "Eyebrows": 192,
+    "Hair": 5352,
+    "PPE_Hardhat": 1040,
+    "PPE_Vest": 2104,
+    "Wardrobe_ScrubTop": 2524,
+    "Wardrobe_ScrubTrousers": 1712,
+    "Wardrobe_ScrubPocket": 2,
+    "Wardrobe_ScrubDrawstring": 576
+  },
+  "clips": [
+    "Idle",
+    "Walk"
+  ]
+}

@@ -70,3 +70,24 @@ A separate HTTP-served production smoke loaded the real built app, continued an 
 Delivery branch: `feat/projectquest-browser`. The Day 2 commit records this milestone; its exact remote SHA is independently checked after pushing. The previous sound/font/commitment milestone was pushed and verified as `6018a38d8a9bc32d37817dfdecec0eaa90d36176`. The downloadable static archive and Git source bundle are regenerated from the final build/commit outside the checkout.
 
 Limits: two construction internship chapters, authored interim geometry, discrete checkpoints and a bounded scheduling scenario. Day 3 onward, other industries and promotions remain future work. No public deployment, target-hardware FPS, human learning-effectiveness, listening-panel or formal assistive-technology validation is claimed.
+
+## Character upgrade — rigged humans (v0.3.0)
+
+**Implemented:** Replaced primitive player/NPC bodies with locally bundled, textured MakeHuman CC0 anatomical meshes and separate 53-bone rigs. Two selectable human builds, natural faces/finger geometry, UV clothing/skin/hair, smoothly blended in-place Idle/Walk clips, scene-specific PPE and shared industry wardrobe configurations use one renderer. The character creator now previews the actual 3D assets with face/hand/full-body views. Body/colour choices persist, original saves retain their prior state, and movement/collision/camera/dialogue/mission commands remain unchanged. Added bounded camera zoom, model loading/retry/cancellation, independent material/skeleton ownership and GPU cleanup. Sources, licences, checksums and optional Blender authoring scripts are bundled and documented.
+
+**Verified in the current cloud instance:**
+
+- `npm run build`: TypeScript and production build passed. No chunk-size warning; the shared human/Three.js chunk is approximately 640 kB (162 kB gzip), lazy preview approximately 6 kB, world approximately 28 kB. The two complete locally bundled model files total approximately 7.9 MB, including embedded textures and optional wardrobe geometry.
+- `npm run lint`: passed.
+- `npm test`: all 99 tests across eight files passed, including real GLB structure, independent skeleton/material instances, walk/idle blending, loading cancellation/disposal and both new/legacy appearance saves.
+- `CHROMIUM_PATH=/usr/bin/chromium npx playwright test --workers=1`: all 15 acceptance tests passed in one completed 6.8-minute run. The three new character cases exercised actual skinned meshes, both body builds, material choices/reload, five independent world rigs, live walking/idle/collision, mentor interaction, camera orbit/zoom and failed-model retry/accessibility. All twelve previous audio, Day 1, Day 2, migration, replay, portrait/focus and movement cases also passed.
+- Inspected browser face, hand, full-body and workplace screenshots, plus an offline clinical-outfit render. Captures are linked in [characters.md](characters.md). Visual review identified an inward-facing hardhat crown; corrected the source winding, re-exported both assets and reran the complete passing suite before delivery.
+- The offline Blender export completed successfully with `--python-exit-code 1`. Python authoring-script syntax, production/model SHA-256 matches and the rebuilt static archive's CRC/model checksums were checked.
+
+An earlier browser attempt overlapped two test runners and lost an audio trace artifact; it was interrupted, as was the pre-hardhat-correction run. Neither is counted as the final result. The final single-worker run above completed all fifteen checks without failures.
+
+**Limits:** These are two semi-realistic game character builds with colour/workplace variations, not a large face/hair collection or facial/lip animation system. Construction remains the only playable industry with two chapters; wardrobe support does not create other campaigns. Broader production art, representative-device FPS, learner/subject-matter review and public deployment remain outstanding. Cloud Chromium uses software graphics and is not a hardware benchmark.
+
+**GitHub:** Development branch `feat/projectquest-browser`; this milestone is recorded by its implementation commit. Its full SHA is checked against the remote after pushing. `main` is not merged and no deployment is implied. The source bundle and playable static archive are regenerated from the delivered revision.
+
+**Next:** Construction Day 3, “The Stakeholder Check-in,” followed by reviewed content and broader character identities according to the roadmap.

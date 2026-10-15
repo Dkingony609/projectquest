@@ -1,0 +1,91 @@
+.character-preview {
+  position: relative;
+  width: min(100%, 330px);
+  margin: 20px 0 0;
+  overflow: hidden;
+  border: 1px solid #c9d3ca;
+  border-radius: 14px;
+  background: #e8e9e4;
+  color: #25473f;
+}
+.character-preview-stage {
+  width: 100%;
+  height: 380px;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.character-preview-stage:active { cursor: grabbing; }
+.character-preview-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.character-preview-message {
+  position: absolute;
+  inset: 0 0 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  background: #e8e9e4f5;
+}
+.character-preview-message p { margin: 0; }
+.character-preview-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #9ab2a5;
+  border-top-color: #176d61;
+  border-radius: 50%;
+  animation: preview-loading 1s linear infinite;
+}
+.character-preview-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 4px;
+  border-top: 1px solid #c9d3ca;
+}
+.character-preview-views,
+.character-preview-rotation { display: flex; gap: 3px; }
+.character-preview-controls button {
+  min-width: 30px;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: transparent;
+  color: #25473f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.character-preview-controls button[aria-pressed="true"] {
+  background: #ffffff;
+  border-color: #cad5cb;
+}
+.character-preview-controls button:hover:not(:disabled) { background: #ffffffb0; }
+.character-preview-controls button:focus-visible {
+  outline: 2px solid #177b6e;
+  outline-offset: 1px;
+}
+.character-preview-controls button:disabled { opacity: 0.45; cursor: default; }
+.character-preview-hint {
+  margin: 0;
+  padding: 5px 12px 10px;
+  text-align: center;
+  color: #526a60;
+  font-size: 10px;
+}
+@keyframes preview-loading { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .character-preview-spinner { animation: none; }
+}
+@media (max-width: 600px) {
+  .character-preview { width: min(100%, 300px); }
+  .character-preview-stage { height: 320px; }
+}

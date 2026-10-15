@@ -18,6 +18,7 @@ import {
   type Command,
   type GameState,
   type Profile,
+  type Appearance,
 } from "./game";
 import type { WorldPosition, WorldTarget } from "./world/WorldCanvas";
 import GamePanel from "./ui/GamePanel";
@@ -30,6 +31,7 @@ import {
 } from "./audio";
 
 const WorldCanvas = lazy(() => import("./world/WorldCanvas"));
+const CharacterPreview = lazy(() => import("./ui/CharacterPreview"));
 type Screen = "menu" | "character" | "industry" | "play";
 type Panel =
   | "mentor"
@@ -44,7 +46,8 @@ type Panel =
   | "settings"
   | "routes"
   | null;
-const DEFAULT_APPEARANCE = {
+const DEFAULT_APPEARANCE: Appearance = {
+  body: "male",
   skin: "#a9714b",
   shirt: "#167a79",
   hair: "#26211e",
@@ -141,46 +144,6 @@ function readSettings() {
   } catch {
     return defaults;
   }
-}
-
-function AvatarPortrait({
-  appearance,
-}: {
-  appearance: typeof DEFAULT_APPEARANCE;
-}) {
-  return (
-    <svg
-      viewBox="0 0 140 150"
-      role="img"
-      aria-label="Your customised avatar"
-      className="avatar-portrait"
-    >
-      <circle cx="70" cy="70" r="65" fill="#e0ebe0" />
-      <path d="M22 150v-25q0-30 48-30t48 30v25" fill={appearance.shirt} />
-      <path d="M59 79h22v23q-11 12-22 0z" fill={appearance.skin} />
-      <ellipse cx="70" cy="60" rx="30" ry="36" fill={appearance.skin} />
-      <path
-        d="M39 56q-5-41 31-41t31 41q-18-4-23-21-17 19-39 21"
-        fill={appearance.hair}
-      />
-      <circle cx="59" cy="62" r="2.5" fill="#243436" />
-      <circle cx="81" cy="62" r="2.5" fill="#243436" />
-      <path
-        d="M62 79q8 6 16 0"
-        stroke="#674a3a"
-        fill="none"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M53 101l17 32 17-32"
-        stroke="#e6ba64"
-        strokeWidth="3"
-        fill="none"
-      />
-      <rect x="61" y="127" width="18" height="22" rx="3" fill="#fffaf0" />
-    </svg>
-  );
 }
 
 export default function App() {
@@ -458,7 +421,9 @@ export default function App() {
           missionDay={game?.day ?? 1}
           missionResolved={game?.phase === "debrief"}
           active={active}
-          blocked={Boolean(panel)}
+          blocked={
+            Boolean(panel) || screen === "character" || screen === "industry"
+          }
           appearance={active && game ? game.profile.appearance : appearance}
           initialPosition={game?.position}
           reducedMotion={settings.reducedMotion}
@@ -587,7 +552,18 @@ export default function App() {
                 <p className="muted">
                   You bring the judgement. We’ll bring the first challenge.
                 </p>
-                <AvatarPortrait appearance={appearance} />
+                <Suspense
+                  fallback={
+                    <div className="loading-scene" role="status">
+                      Preparing your character…
+                    </div>
+                  }
+                >
+                  <CharacterPreview
+                    appearance={appearance}
+                    reducedMotion={settings.reducedMotion}
+                  />
+                </Suspense>
                 <p className="avatar-caption">
                   Junior PM Intern · Your first placement
                 </p>
@@ -612,6 +588,22 @@ export default function App() {
                   placeholder="Your name"
                   autoComplete="given-name"
                 />
+                <label className="form-label" htmlFor="body-type">
+                  Body type
+                </label>
+                <select
+                  id="body-type"
+                  value={appearance.body ?? "male"}
+                  onChange={(event) =>
+                    setAppearance((current) => ({
+                      ...current,
+                      body: event.target.value as "male" | "female",
+                    }))
+                  }
+                >
+                  <option value="male">Masculine</option>
+                  <option value="female">Feminine</option>
+                </select>
                 {(
                   [
                     ["skin", "Skin tone", SKINS],
@@ -915,8 +907,8 @@ export default function App() {
             </button>
           )}
           <div className="control-hint">
-            WASD / arrows · Move &nbsp; Drag · Camera &nbsp; E · Interact &nbsp;
-            Click ground · Walk
+            WASD / arrows · Move &nbsp; Drag · Camera &nbsp; Scroll · Zoom
+            &nbsp; E · Interact &nbsp; Click ground · Walk
           </div>
         </>
       )}

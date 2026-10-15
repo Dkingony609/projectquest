@@ -37,7 +37,9 @@ export function isProfile(value: unknown): value is Profile {
     oneOf(value.assistance, ["guided", "standard"]) &&
     color(value.appearance.skin) &&
     color(value.appearance.shirt) &&
-    color(value.appearance.hair)
+    color(value.appearance.hair) &&
+    (value.appearance.body === undefined ||
+      oneOf(value.appearance.body, ["male", "female"]))
   );
 }
 export function isIssue(value: unknown): value is Issue {

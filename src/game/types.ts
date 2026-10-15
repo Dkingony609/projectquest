@@ -11,6 +11,8 @@ export type Impact = "foundation" | "delivery";
 export type ReviewAnswer = "conditional" | "guarantee" | "defer";
 export type OwnerId = "Sam" | "Morgan" | "Alex";
 export interface Appearance {
+  /** Older saves omit body and retain the original masculine build. */
+  body?: "male" | "female";
   skin: string;
   shirt: string;
   hair: string;

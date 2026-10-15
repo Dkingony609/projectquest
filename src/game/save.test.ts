@@ -20,6 +20,26 @@ describe("versioned and replay-validated local saves", () => {
       expect(parseSave(serializeSave(state))).toEqual({ state });
     }
   });
+  it("persists both human body types while keeping legacy profiles unchanged", () => {
+    const legacy = createGame(profile);
+    expect(legacy.profile.appearance.body).toBeUndefined();
+    expect(parseSave(serializeSave(legacy)).state?.profile).toEqual(profile);
+    for (const body of ["male", "female"] as const) {
+      const state = createGame({
+        ...profile,
+        appearance: { ...profile.appearance, body },
+      });
+      expect(parseSave(serializeSave(state))).toEqual({ state });
+      expect(state.profile.appearance.body).toBe(body);
+    }
+  });
+  it("rejects unsupported body types without modifying valid saved progress", () => {
+    const state = createGame(profile);
+    const save = JSON.parse(serializeSave(state));
+    save.snapshot.profile.appearance.body = "unsupported";
+    expect(parseSave(JSON.stringify(save)).error).toMatch(/profile/);
+    expect(parseSave(serializeSave(state))).toEqual({ state });
+  });
   it("resumes mid-mission without duplicate events or XP", () => {
     const state = investigate();
     const restored = parseSave(serializeSave(state)).state!;

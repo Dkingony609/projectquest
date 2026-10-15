@@ -103,3 +103,7 @@ No analytics, cloud sync, enterprise reporting, multiplayer, or AI dialogue is n
 3. Different sectors need different operational constraints and believable stories, not the same answer sequence with different labels.
 4. Preserve old save compatibility through explicit migration or an honest incompatibility path.
 5. Keep core gameplay available without a backend or optional AI service.
+
+## Human rendering boundary
+
+`src/world/humans.ts` loads and validates the bundled glTF humans. Each actor receives a private cloned skeleton, materials and animation mixer while sharing geometry/textures. `WorldCanvas` preserves gameplay transforms, collision and target IDs; it drives crossfaded Idle/Walk clips from actual travelled distance. Resource ownership and retries are explicit. `CharacterPreview` uses the same factory for editable body/appearance previews. The optional appearance body field preserves original saves without changing their canonical state. See [characters.md](characters.md) for the wardrobe, asset pipeline and disposal contract.
