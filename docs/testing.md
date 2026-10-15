@@ -6,13 +6,13 @@ These checks define acceptance criteria. A check is a verified result only when 
 
 Use the repository's package scripts after installation; exact commands and current outcomes are recorded by the implementation milestone. The required engineering checks are a TypeScript check, production build, focused domain tests, and browser gameplay smoke/integration tests. Lint is required when a lint configuration is provided. Do not bypass TLS, package signatures or checksum verification to install dependencies.
 
-| Check | Purpose | Failure means |
-| --- | --- | --- |
-| Type checking | Domain commands, UI state and world adapters agree | Fix contract errors before claiming runnable milestone |
-| Production build | Browser bundle and static assets resolve | Fix bundling/asset defects; a dev page alone is insufficient |
-| Domain unit/integration tests | Validation, deterministic outcomes, assessment and save contracts | Reproduce the branch/state failure and fix causal logic |
-| Browser gameplay | Actual launch, controls, tools, conversations, consequence and resume | A build cannot substitute for this integration proof |
-| Repository/remote review | No secrets/generated dependencies; coherent committed milestone reached GitHub | Preserve local work, report exact push/access issue, do not claim delivery |
+| Check                         | Purpose                                                                        | Failure means                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Type checking                 | Domain commands, UI state and world adapters agree                             | Fix contract errors before claiming runnable milestone                     |
+| Production build              | Browser bundle and static assets resolve                                       | Fix bundling/asset defects; a dev page alone is insufficient               |
+| Domain unit/integration tests | Validation, deterministic outcomes, assessment and save contracts              | Reproduce the branch/state failure and fix causal logic                    |
+| Browser gameplay              | Actual launch, controls, tools, conversations, consequence and resume          | A build cannot substitute for this integration proof                       |
+| Repository/remote review      | No secrets/generated dependencies; coherent committed milestone reached GitHub | Preserve local work, report exact push/access issue, do not claim delivery |
 
 ## M1 controller acceptance
 
@@ -26,25 +26,25 @@ The world cannot be represented as verified by only counting a canvas element. B
 
 ## M2 mission and simulation tests
 
-| Test | Required assertion |
-| --- | --- |
-| New career | Name/appearance and construction selection survive entry; role is Junior PM Intern |
-| Visible future sectors | Unbuilt sector cannot silently start the construction mission or claim completion |
-| Briefing/preconditions | Tools/actions follow mission dependencies; later events cannot bypass required valid state |
-| Three independent sources | Schedule, foreman and supplier provide different relevant information; duplicate inspection does not count as a new source |
-| Source provenance | Uncertainty cannot turn a supplier estimate into an authoritative guarantee |
-| Issue validation | Missing owner, affected milestone, evidence, next checkpoint or invalid confidence produces readable errors; the rejected command preserves canonical state |
-| Functional tools | A valid task/issue change is retained and influences displayed project information; opening panels alone is not work evidence |
-| Legitimate choices | Wait-with-contingency and propose-alternative-with-approval are both available and produce explainable distinct trade-offs |
-| Governance branch | Ordering without authority is flagged; it cannot earn the same authority score or promotion eligibility as a reviewed proposal |
-| Unsupported promise | Credibility and later forecast differ from honest uncertainty reporting; debrief cites the logged promise |
-| Determinism | Same saved starting state and commands yield the same event, project metrics and assessment |
-| Event idempotency | Reloading or repeating submit/advance cannot duplicate the delivery event, XP or completed objectives |
-| Rubric | Accuracy/impact/authority/follow-up stay within 0–3 and cite actually observed actions |
-| Career integrity | A single Day 1 success does not promote the intern or label competency mastered |
-| Recovery | After a poor outcome, feedback and replay/recovery stay available; the game is not unwinnable |
-| Persistence | Valid in-progress and completed snapshots resume correctly; invalid versions, corrupt data and unavailable storage are handled safely |
-| Accessible completion | Semantic keyboard/click source and tool paths invoke the same validated commands as world interaction |
+| Test                      | Required assertion                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New career                | Name/appearance and construction selection survive entry; role is Junior PM Intern                                                                          |
+| Visible future sectors    | Unbuilt sector cannot silently start the construction mission or claim completion                                                                           |
+| Briefing/preconditions    | Tools/actions follow mission dependencies; later events cannot bypass required valid state                                                                  |
+| Three independent sources | Schedule, foreman and supplier provide different relevant information; duplicate inspection does not count as a new source                                  |
+| Source provenance         | Uncertainty cannot turn a supplier estimate into an authoritative guarantee                                                                                 |
+| Issue validation          | Missing owner, affected milestone, evidence, next checkpoint or invalid confidence produces readable errors; the rejected command preserves canonical state |
+| Functional tools          | A valid task/issue change is retained and influences displayed project information; opening panels alone is not work evidence                               |
+| Legitimate choices        | Wait-with-contingency and propose-alternative-with-approval are both available and produce explainable distinct trade-offs                                  |
+| Governance branch         | Ordering without authority is flagged; it cannot earn the same authority score or promotion eligibility as a reviewed proposal                              |
+| Unsupported promise       | Credibility and later forecast differ from honest uncertainty reporting; debrief cites the logged promise                                                   |
+| Determinism               | Same saved starting state and commands yield the same event, project metrics and assessment                                                                 |
+| Event idempotency         | Reloading or repeating submit/advance cannot duplicate the delivery event, XP or completed objectives                                                       |
+| Rubric                    | Accuracy/impact/authority/follow-up stay within 0–3 and cite actually observed actions                                                                      |
+| Career integrity          | A single Day 1 success does not promote the intern or label competency mastered                                                                             |
+| Recovery                  | After a poor outcome, feedback and replay/recovery stay available; the game is not unwinnable                                                               |
+| Persistence               | Valid in-progress and completed snapshots resume correctly; invalid versions, corrupt data and unavailable storage are handled safely                       |
+| Accessible completion     | Semantic keyboard/click source and tool paths invoke the same validated commands as world interaction                                                       |
 
 ## End-to-end gameplay walkthrough
 
@@ -54,16 +54,19 @@ Repeat using the other legitimate option and one governance failure branch. Use 
 
 ## Research and release gates
 
-| Gate | Required evidence | Current expectation |
-| --- | --- | --- |
-| Novice usability | Players complete the loop without facilitation, first work artefact within target onboarding window, explain consequence | Moderated playtest after stable slice |
-| Learning transfer | New-context pre/post work task, rather than repeated answer memorisation | Learning designer and representative learners |
-| PM authenticity | Experienced PM reviews authority, uncertainty, dependencies and realistic trade-offs | Subject-matter review before release claims |
-| Sector/jurisdiction safety | Domain review; no implied ability to waive clinical/engineering/legal checks | Every regulated pack needs review |
-| Accessibility | Keyboard-only and alternative-control mission completion; text, contrast/motion and assistive technology checks | Formal pass beyond semantic DOM implementation |
-| Performance | Load and frame-time records with browser, CPU/GPU, viewport, quality and scene | No minimum-hardware FPS claim before measurement |
-| Engine comparison | Same representative mission in Three.js and Godot with usability/build/maintenance measures | Deferred candidate-selection gate |
+| Gate                       | Required evidence                                                                                                        | Current expectation                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| Novice usability           | Players complete the loop without facilitation, first work artefact within target onboarding window, explain consequence | Moderated playtest after stable slice            |
+| Learning transfer          | New-context pre/post work task, rather than repeated answer memorisation                                                 | Learning designer and representative learners    |
+| PM authenticity            | Experienced PM reviews authority, uncertainty, dependencies and realistic trade-offs                                     | Subject-matter review before release claims      |
+| Sector/jurisdiction safety | Domain review; no implied ability to waive clinical/engineering/legal checks                                             | Every regulated pack needs review                |
+| Accessibility              | Keyboard-only and alternative-control mission completion; text, contrast/motion and assistive technology checks          | Formal pass beyond semantic DOM implementation   |
+| Performance                | Load and frame-time records with browser, CPU/GPU, viewport, quality and scene                                           | No minimum-hardware FPS claim before measurement |
+| Engine comparison          | Same representative mission in Three.js and Godot with usability/build/maintenance measures                              | Deferred candidate-selection gate                |
 
 ## Milestone results
 
 Initial documentation defines intended checks only. The milestone owner records the commands actually run, browser behavior observed, failures repaired, remaining limitations, branch and verified remote commit when delivering M1/M2. Remote delivery and a production build should never be called a public deployment unless deployment was separately performed and checked.
+
+
+Current engineering result: the frozen-lock installation, TypeScript/production build, ESLint, 39 unit/integration tests and six Chromium acceptance tests passed in this instance. Exact scope, repaired failures and limitations are in [verification.md](verification.md). Use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- --workers=1` on this CPU-only cloud machine to avoid competing software-rendered browsers. These results do not complete the separate research, assistive-technology and target-hardware gates.

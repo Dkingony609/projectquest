@@ -61,3 +61,11 @@ The decisions here adapt the [GDD](design/ProjectQuest_Comprehensive_Game_Design
 **Decision:** Keep 3D movement and proximity-based discovery central while exposing semantic keyboard/click alternatives for key sources and tools. Use legible 2D panels for issue fields, task details, sources and feedback. Do not require audio cues, reaction speed, drag-and-drop, or reading tiny world labels to finish the learning objective.
 
 **Consequence:** Alternative interaction can complete the same domain commands and assessment. World affordances still make locations and work context meaningful. Formal screen-reader, keyboard-only, low-motion and device validation remain explicit M3 gates; do not describe an automated DOM check as an accessibility certification.
+
+## ADR 008 — Retain the renderer during accessible travel and pause its backdrop
+
+**Status:** Accepted after browser validation exposed software-rendering overhead.
+
+**Decision:** A presentation checkpoint moves the avatar to a validated accessible destination without recreating the WebGL scene. An open tool/dialog renders its backdrop once and suspends repeated GPU draws until the relevant visual state or size changes. Project commands and UI input continue normally; project time remains deliberate. The rear office facade cuts away on the site side to keep the player and source characters visible.
+
+**Consequence:** Accessible source visits avoid repeated shader compilation and resource creation, while semantic tools remain responsive on software graphics. The browser acceptance run that originally timed out is preserved as a diagnosed failure, followed by reruns after this correction. This optimisation does not establish representative-device FPS.

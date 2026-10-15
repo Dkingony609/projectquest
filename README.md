@@ -6,32 +6,58 @@ The source of truth is the supplied [Game Design Document](docs/design/ProjectQu
 
 ## Current milestone
 
-Milestone 01 provides the browser architecture and an explorable 3D workplace: third-person movement, camera orbit, collision, click-to-move, and proximity interactions. It is an interaction sandbox. The next milestone integrates the GDD's construction Day 1 mission, **The Missing Materials**, with project tools, simulation, competency feedback, and persistent saves.
+The local implementation contains a complete engineering slice of **The Missing Materials** (`CONST-I01`), the first construction internship assignment. Create your character, enter a navigable 3D office/site, meet Alex, inspect the schedule, interview colleagues, update the delivery card and issue log, and recommend a response. The 10:30 checkpoint applies project consequences; a four-part, source-cited debrief and local save preserve your progress.
+
+Construction is the only playable industry. Software and the other four sectors are labelled future content. Five-day campaigns, promotions beyond intern, and the full career simulation remain on the [roadmap](docs/roadmap.md). Bespoke production art/audio, human learner playtests, subject-matter review, and representative-hardware benchmarks remain outstanding.
+
+Milestone 01 is committed locally as `e814373` on `feat/projectquest-browser`. Milestone 02 is implemented and validated locally: 39 unit/integration tests, six Chromium acceptance tests, lint and the production build pass. **GitHub delivery is blocked:** pushes returned HTTP 403, including after the connection recheck. These changes are not confirmed on the remote. See [verification](docs/verification.md) for the latest checks and delivery status.
 
 ## Install and run
 
 Requires Node.js 22 or newer and npm. No backend, account, credentials, or API keys are needed.
 
+Use the existing cloud checkout; each task is already isolated and does not need a Git worktree:
+
 ```bash
-git clone https://github.com/Dkingony609/projectquest.git
-cd projectquest
-git switch feat/projectquest-browser
+cd /workspace/projectquest
 npm ci
 npm run dev
 ```
 
-Vite reports the development address in your terminal. Open that address in a modern desktop browser with WebGL. WASD or arrow keys move, dragging the world rotates the camera, E interacts with a nearby station, and clicking the ground walks to a location. Detailed work will use accessible HTML interfaces.
+Vite reports the development address in your terminal. Open it in a modern desktop browser with WebGL. A static production build is supported; no backend, account, credentials, or API keys are needed to play.
 
-For this cloud workspace use the existing checkout at `/workspace/projectquest`; tasks are already isolated and do not need a Git worktree. npm's cache can be kept in the writable workspace:
+npm's cache can be kept in the writable workspace:
 
 ```bash
 npm --cache /workspace/.cache/projectquest-npm ci
 ```
 
+For another machine, the canonical repository is `https://github.com/Dkingony609/projectquest.git`. Once write access is restored and this branch has been pushed and verified, clone it and switch to `feat/projectquest-browser` before installing. Until then, cloning the remote will not necessarily include this implementation; preserve the local checkout.
+
+## Play
+
+| Control                               | Action                                                               |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| WASD / arrow keys                     | Walk with collision                                                  |
+| Drag the world                        | Orbit the third-person camera                                        |
+| Click ground / a labelled world route | Walk along a path around obstacles                                   |
+| E / contextual interaction button     | Interact with a nearby colleague or station                          |
+| T                                     | Open the portable project tablet: tasks, schedule and issue register |
+| J                                     | Open the mission journal                                             |
+| Escape                                | Close a panel, or open settings from the workplace                   |
+| Tab / Shift+Tab                       | Navigate semantic interface controls                                 |
+
+Accessible navigation offers labelled routes beside the same 3D sources. A graphics-failure route also permits investigation and tools without WebGL. Reduced motion, high contrast, larger text and lower graphics cost are available in settings. These controls support the learning loop; formal assistive-technology validation is still required.
+
+Project time advances only when you choose the checkpoint. Read the schedule, speak with Sam and Morgan, and record their evidence before reporting. Taylor provides optional acceptance-check detail. Waiting with a contingency and requesting an approved alternate are legitimate responses with different costs and forecasts. Unsupported promises and attempts to order beyond your authority have recoverable consequences. Replay starts a fresh practice run, including XP; one mission does not grant a promotion.
+
+Progress saves in this browser's localStorage. It is not a cloud backup and does not transfer across devices/origins. The main menu can resume valid progress; starting a new career replaces the current save after confirmation. Storage failures and incompatible/corrupt saves show a recovery message.
+
 ## Checks and production build
 
 ```bash
 npm run lint
+npm run typecheck
 npm run build
 npm test
 npx playwright install chromium
@@ -39,7 +65,7 @@ npm run test:e2e
 npm run preview
 ```
 
-If Chromium is already installed, skip its download and use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`. Browser tests start Vite automatically. Build output goes to `dist/` and can be served by a static HTTPS host. A production deployment is not created automatically.
+If Chromium is already installed, skip its download and use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`. Browser tests start Vite automatically on port 5173. Build output goes to `dist/` and can be served by a static HTTPS host. A production deployment is not created automatically. The [testing guide](docs/testing.md) separates checks already run from automated browser checks from future accessibility, research and hardware gates.
 
 ## Continue development
 
