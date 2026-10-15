@@ -80,6 +80,15 @@ export function isCommand(value: unknown): value is Command {
         oneOf(value.npc, ["lead", "supplier", "safety"]) &&
         oneOf(value.choice, ["facts", "pressure"])
       );
+    case "followUp":
+      return oneOf(value.npc, ["lead", "supplier", "safety"]);
+    case "chooseRecommendation":
+      return oneOf(value.option, [
+        "wait",
+        "alternate",
+        "promise",
+        "unauthorised",
+      ]);
     case "updateTask":
       return (
         text(value.taskId, 1, 30) &&

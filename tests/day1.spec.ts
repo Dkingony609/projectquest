@@ -71,6 +71,18 @@ async function investigate(
     .getByRole("button", { name: "Ask about crews and dependencies" })
     .click();
   await expect(
+    page.getByRole("button", {
+      name: "Ask about crews and dependencies",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", {
+      name: "Ask Sam to hold the original deadline",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(
     page.getByRole("heading", {
       name: "Source record · Sam’s crew and dependency check",
     }),
@@ -151,6 +163,16 @@ async function investigate(
 async function recommend(page: Page, option: string) {
   await visit(page, "Coordination meeting", "report");
   await page.getByRole("button", { name: option, exact: false }).click();
+  for (const response of [
+    "Wait with a contingency",
+    "Request an approved alternate",
+    "Promise delivery on time",
+    "Attempt to order without approval",
+  ]) {
+    await expect(
+      page.getByRole("button", { name: response, exact: true }),
+    ).toBeDisabled();
+  }
   await page
     .getByLabel("Recommendation confidence", { exact: true })
     .selectOption("estimate");
@@ -207,11 +229,9 @@ test("completes the first-day wait assignment with source-backed tools, feedback
   await expect(dialog.getByText("120,400 cr", { exact: true })).toBeVisible();
   await expect(dialog.locator(".pq-rubric article")).toHaveCount(4);
   for (const criterion of ["Accuracy", "Impact", "Authority", "Follow-up"]) {
-    const result = dialog
-      .locator(".pq-rubric article")
-      .filter({
-        has: page.getByRole("heading", { name: criterion, exact: true }),
-      });
+    const result = dialog.locator(".pq-rubric article").filter({
+      has: page.getByRole("heading", { name: criterion, exact: true }),
+    });
     await expect(result.locator("header > strong")).toHaveText("3 / 3");
     expect(await result.locator(".pq-citations li").count()).toBeGreaterThan(0);
   }

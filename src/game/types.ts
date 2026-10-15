@@ -97,6 +97,8 @@ export type Command =
   | { type: "brief" }
   | { type: "inspect"; source: SourceId }
   | { type: "ask"; npc: NpcId; choice: "facts" | "pressure" }
+  | { type: "followUp"; npc: NpcId }
+  | { type: "chooseRecommendation"; option: ProposalOption }
   | {
       type: "updateTask";
       taskId: string;

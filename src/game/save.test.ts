@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, createGame } from "./engine";
+import {
+  applyCommand,
+  createGame,
+  getConversationChoice,
+  getRecommendationChoice,
+} from "./engine";
+import { getPack } from "./content";
 import { parseSave, serializeSave } from "./save";
-import { finish, investigate, profile } from "./testHelpers";
+import { finish, investigate, profile, run } from "./testHelpers";
 
 describe("versioned and replay-validated local saves", () => {
   it("round-trips arrival, mid-mission and debrief state including appearance and position", () => {
@@ -24,6 +30,153 @@ describe("versioned and replay-validated local saves", () => {
     expect(inspected.state).toBe(restored);
     expect(restored.events).toHaveLength(state.events.length);
     expect(restored.career.xp).toBe(0);
+  });
+  it("persists the original conversation approach and factual follow-up without restoring lost trust", () => {
+    let state = run(createGame(profile), { type: "brief" });
+    state = run(state, { type: "ask", npc: "supplier", choice: "pressure" });
+    for (const followedUp of [false, true]) {
+      if (followedUp) state = run(state, { type: "followUp", npc: "supplier" });
+      const parsed = parseSave(serializeSave(state));
+      expect(parsed.error).toBeUndefined();
+      expect(parsed.state).toEqual(state);
+      const restored = parsed.state!;
+      expect(getConversationChoice(restored, "supplier")).toBe("pressure");
+      expect(restored.relationships.Morgan).toBe(56);
+      expect(restored.evidence.includes("supplier")).toBe(followedUp);
+      const switched = applyCommand(restored, {
+        type: "ask",
+        npc: "supplier",
+        choice: "facts",
+      });
+      expect(switched.error).toBeTruthy();
+      expect(switched.state).toBe(restored);
+      if (followedUp)
+        expect(
+          applyCommand(restored, { type: "followUp", npc: "supplier" }).state,
+        ).toBe(restored);
+    }
+  });
+  it("persists a recommendation before submission and keeps it after failed submission", () => {
+    const chosen = run(investigate(), {
+      type: "chooseRecommendation",
+      option: "alternate",
+    });
+    const parsed = parseSave(serializeSave(chosen));
+    expect(parsed.error).toBeUndefined();
+    expect(parsed.state).toEqual(chosen);
+    const restored = parsed.state!;
+    expect(getRecommendationChoice(restored)).toBe("alternate");
+    expect(restored.proposal).toBeNull();
+    const changed = applyCommand(restored, {
+      type: "chooseRecommendation",
+      option: "wait",
+    });
+    expect(changed.error).toBeTruthy();
+    expect(changed.state).toBe(restored);
+    const failed = applyCommand(restored, {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    expect(failed.error).toBeTruthy();
+    expect(failed.state).toBe(restored);
+    const resumed = parseSave(serializeSave(failed.state)).state!;
+    expect(getRecommendationChoice(resumed)).toBe("alternate");
+    let state = run(resumed, {
+      type: "submitRecommendation",
+      option: "alternate",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    state = run(state, { type: "answerReview", answer: "conditional" });
+    state = run(state, { type: "advanceTime" });
+    expect(parseSave(serializeSave(state))).toEqual({ state });
+  });
+  it("keeps a submitted recommendation and mentor answer fixed after restoring", () => {
+    let state = run(investigate(), {
+      type: "chooseRecommendation",
+      option: "wait",
+    });
+    state = run(state, {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    state = run(state, { type: "answerReview", answer: "conditional" });
+    const parsed = parseSave(serializeSave(state));
+    expect(parsed.error).toBeUndefined();
+    const restored = parsed.state!;
+    expect(getRecommendationChoice(restored)).toBe("wait");
+    const changed = applyCommand(restored, {
+      type: "answerReview",
+      answer: "guarantee",
+    });
+    expect(changed.error).toBeTruthy();
+    expect(changed.state).toBe(restored);
+    expect(restored.reviewAnswer).toBe("conditional");
+    expect(restored.proposal?.approval).toBe("approved");
+  });
+  it("round-trips legacy saves that submitted a recommendation without a separate choice", () => {
+    for (const state of [finish("wait"), finish("alternate")]) {
+      expect(
+        state.journal.some(
+          (command) => command.type === "chooseRecommendation",
+        ),
+      ).toBe(false);
+      const parsed = parseSave(serializeSave(state));
+      expect(parsed.error).toBeUndefined();
+      expect(parsed.state).toEqual(state);
+      expect(getRecommendationChoice(parsed.state!)).toBe(
+        state.proposal!.option,
+      );
+    }
+  });
+  it("loads a legacy pressure-then-facts journal while retaining the first approach for future commands", () => {
+    const oldState = structuredClone(
+      run(run(createGame(profile), { type: "brief" }), {
+        type: "ask",
+        npc: "supplier",
+        choice: "pressure",
+      }),
+    );
+    // Before firm choices, asking for facts after pressure added evidence and +3 trust.
+    oldState.evidence.push("supplier");
+    oldState.relationships.Morgan += 3;
+    oldState.events.push({
+      seq: oldState.events.length + 1,
+      type: "question_asked",
+      summary: `Asked Morgan for evidence. ${getPack().npcs.supplier.facts}`,
+      day: oldState.day,
+      minutes: oldState.minutes,
+    });
+    oldState.journal.push({ type: "ask", npc: "supplier", choice: "facts" });
+    const parsed = parseSave(serializeSave(oldState));
+    expect(parsed.error).toBeUndefined();
+    expect(parsed.state).toEqual(oldState);
+    const restored = parsed.state!;
+    expect(getConversationChoice(restored, "supplier")).toBe("pressure");
+    expect(restored.relationships.Morgan).toBe(59);
+    expect(restored.evidence).toEqual(["supplier"]);
+    const switched = applyCommand(restored, {
+      type: "ask",
+      npc: "supplier",
+      choice: "facts",
+    });
+    expect(switched.error).toBeTruthy();
+    expect(switched.state).toBe(restored);
+    expect(parseSave(serializeSave(restored))).toEqual({ state: restored });
+    let continued = run(restored, {
+      type: "ask",
+      npc: "lead",
+      choice: "pressure",
+    });
+    continued = run(continued, { type: "followUp", npc: "lead" });
+    expect(parseSave(serializeSave(continued))).toEqual({ state: continued });
   });
   it("rejects malformed, incompatible, oversized and invalid-profile inputs clearly", () => {
     expect(parseSave("{bad").error).toMatch(/valid JSON/);

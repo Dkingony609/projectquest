@@ -1,6 +1,27 @@
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/manrope-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/dm-serif-display-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/dm-serif-display-latin-400-italic.woff2") format("woff2");
+}
 :root {
   font-family:
-    Inter,
+    "Manrope",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -111,7 +132,7 @@ p {
   font-weight: 650;
 }
 .launch-panel h1 em {
-  font-family: Georgia, serif;
+  font-family: "DM Serif Display", Georgia, serif;
   font-weight: 400;
   color: var(--teal);
 }
@@ -443,7 +464,7 @@ kbd {
 }
 .creation-grid h1 em,
 .industry-panel h1 em {
-  font-family: Georgia, serif;
+  font-family: "DM Serif Display", Georgia, serif;
   font-weight: 400;
   color: var(--teal);
 }
@@ -1266,5 +1287,93 @@ kbd {
   }
   .large-text .mission-hud .hint {
     display: none;
+  }
+}
+
+/* Sound controls share the settings panel's keyboard and contrast behavior. */
+.audio-settings {
+  border-top: 1px solid #d3ded1;
+  padding-top: 20px;
+  margin-top: 24px;
+}
+.audio-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.audio-settings-heading h3 {
+  font-size: 16px;
+  margin-bottom: 7px;
+}
+.audio-settings-heading p,
+.audio-note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.audio-mute {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 13px;
+  margin: 14px 0;
+}
+.audio-mute input {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--teal);
+}
+.audio-slider {
+  display: block;
+  font-size: 12px;
+  margin: 18px 0;
+}
+.audio-slider > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 650;
+}
+.audio-slider output {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.audio-slider input {
+  width: 100%;
+  accent-color: var(--teal);
+  margin: 12px 0 3px;
+  cursor: pointer;
+  min-height: 24px;
+}
+.menu-audio-button {
+  position: absolute;
+  bottom: 28px;
+  left: calc(6vw + 190px);
+  background: transparent;
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  font-size: 11px;
+}
+.audio-quick-toggle {
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 760px) {
+  .menu-audio-button {
+    bottom: 20px;
+    left: 210px;
+    font-size: 10px;
+  }
+  .hud-top-right {
+    gap: 5px;
+  }
+  .audio-quick-toggle {
+    width: 30px;
   }
 }

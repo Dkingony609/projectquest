@@ -45,3 +45,10 @@ Reusable environment install_script and start_skill were saved as a configuratio
 
 
 Final reproducibility check: `npm --cache /workspace/.cache/projectquest-npm ci` passed from the frozen lockfile, followed by a passing build, lint and all 39 tests. Source formatting was normalised without logic changes. Initial UI JavaScript is approximately 309 kB (94 kB gzip); the separately loaded Three.js world is approximately 564 kB (144 kB gzip). No chunk-size warning remains. GitHub Actions checks are defined and are now present on the pushed branch. Remote workflow results have not been checked; the passing checks reported here are local results.
+
+
+## Feedback milestone — music, typography and committed choices
+
+Implemented the original 98-second “First Light at Riverside” instrumental, scene mixing and musical effects; gesture-safe playback, music/effects levels, mute, hidden-tab suspension and graceful no-audio support. Added self-hosted Manrope and DM Serif Display with SIL OFL notices. Committed dialogue and recommendation choices are canonical, visibly disabled and retained across panels/saves; a separate documented recovery preserves a pressured conversation's cost. Old save journals remain replay-compatible.
+
+Verified: build and TypeScript, ESLint, 52 unit/integration tests and eight Chromium acceptance tests passed. The new audio browser test decoded and played the real score, measured nonzero post-master output, verified zero music output at volume zero and mute, reloaded settings, loaded actual font files, and checked graceful unsupported-audio behavior. Existing complete Day 1 paths, movement, save/resume and portrait controls still passed. Signal checks of the rendered score record peak0.76, RMS0.1395 and a bounded loop seam; no subjective listening-panel claim is made. No extra mission is claimed until the next milestone.

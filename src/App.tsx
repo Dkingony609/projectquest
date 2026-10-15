@@ -20,6 +20,12 @@ import {
 import type { WorldPosition, WorldTarget } from "./world/WorldCanvas";
 import GamePanel from "./ui/GamePanel";
 import Dialog from "./ui/Dialog";
+import AudioSettings, { SoundIcon } from "./ui/AudioSettings";
+import {
+  gameAudio,
+  normalizeAudioPreferences,
+  DEFAULT_AUDIO_PREFERENCES,
+} from "./audio";
 
 const WorldCanvas = lazy(() => import("./world/WorldCanvas"));
 type Screen = "menu" | "character" | "industry" | "play";
@@ -111,18 +117,25 @@ function readSettings() {
     highContrast: false,
     largeText: false,
     lowSpec: false,
+    ...DEFAULT_AUDIO_PREFERENCES,
   };
   try {
     const saved = JSON.parse(
       localStorage.getItem("projectquest.settings.v1") ?? "null",
     );
     if (!saved || typeof saved !== "object") return defaults;
-    return Object.fromEntries(
-      Object.entries(defaults).map(([key, value]) => [
-        key,
-        typeof saved[key] === "boolean" ? saved[key] : value,
-      ]),
-    ) as typeof defaults;
+    return {
+      ...defaults,
+      ...Object.fromEntries(
+        Object.entries(defaults)
+          .filter(([, value]) => typeof value === "boolean")
+          .map(([key, value]) => [
+            key,
+            typeof saved[key] === "boolean" ? saved[key] : value,
+          ]),
+      ),
+      ...normalizeAudioPreferences(saved),
+    };
   } catch {
     return defaults;
   }
@@ -185,11 +198,68 @@ export default function App() {
     initial.state ? "Save found" : "No save yet",
   );
   const [settings, setSettings] = useState(readSettings);
+  const [audioStatus, setAudioStatus] = useState(() => gameAudio.getStatus());
   const [worldEpoch, setWorldEpoch] = useState(0);
   const [ready, setReady] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const active = screen === "play" && Boolean(game);
   const close = useCallback(() => setPanel(null), []);
+
+  const enableAudio = useCallback(() => {
+    void gameAudio.unlock().then(() => setAudioStatus(gameAudio.getStatus()));
+  }, []);
+
+  useEffect(() => {
+    gameAudio.setPreferences(settings);
+    setAudioStatus(gameAudio.getStatus());
+  }, [settings.musicVolume, settings.effectsVolume, settings.muted]);
+
+  useEffect(() => {
+    gameAudio.setScene(
+      screen !== "play"
+        ? "menu"
+        : game?.phase === "debrief"
+          ? "debrief"
+          : "workplace",
+    );
+  }, [screen, game?.phase]);
+
+  useEffect(() => {
+    function gesture(event: Event) {
+      if (event instanceof KeyboardEvent && event.repeat) return;
+      if (
+        !gameAudio.getStatus().started ||
+        gameAudio.getStatus().contextState !== "running"
+      )
+        enableAudio();
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest('button:not([disabled]), [role="tab"]') &&
+        (!(event instanceof KeyboardEvent) ||
+          ["Enter", " "].includes(event.key))
+      )
+        gameAudio.playCue("click");
+    }
+    function visibility() {
+      if (document.hidden) void gameAudio.suspend();
+      else void gameAudio.resume();
+    }
+    window.addEventListener("pointerdown", gesture, true);
+    window.addEventListener("keydown", gesture, true);
+    document.addEventListener("visibilitychange", visibility);
+    const meter = window.setInterval(
+      () => setAudioStatus(gameAudio.getStatus()),
+      400,
+    );
+    return () => {
+      window.removeEventListener("pointerdown", gesture, true);
+      window.removeEventListener("keydown", gesture, true);
+      document.removeEventListener("visibilitychange", visibility);
+      clearInterval(meter);
+      gameAudio.dispose();
+    };
+  }, [enableAudio]);
 
   const saveGame = useCallback((state: GameState) => {
     try {
@@ -227,6 +297,20 @@ export default function App() {
     setNotice(result.error ?? result.notice ?? "Project record updated.");
     setNoticeError(Boolean(result.error));
     if (result.state !== current) {
+      if (result.state.phase === "debrief" && current.phase !== "debrief")
+        gameAudio.playCue(
+          result.state.project.governance === "compliant"
+            ? "success"
+            : "setback",
+        );
+      else
+        gameAudio.playCue(
+          ["ask", "chooseRecommendation", "answerReview", "followUp"].includes(
+            command.type,
+          )
+            ? "decision"
+            : "notification",
+        );
       gameRef.current = result.state;
       setGame(result.state);
     }
@@ -346,6 +430,11 @@ export default function App() {
     <main
       className={`game-root ${settings.highContrast ? "high-contrast" : ""} ${settings.largeText ? "large-text" : ""}`}
       data-screen={screen}
+      data-audio-supported={audioStatus.supported}
+      data-audio-state={audioStatus.contextState}
+      data-audio-loaded={audioStatus.trackLoaded}
+      data-audio-playing={audioStatus.musicPlaying}
+      data-audio-level={audioStatus.outputLevel.toFixed(6)}
     >
       <Suspense
         fallback={
@@ -448,6 +537,20 @@ export default function App() {
             onClick={() => setPanel("settings")}
           >
             Accessibility & settings
+          </button>
+          <button
+            className="menu-audio-button"
+            onClick={() => {
+              enableAudio();
+              setSettings((current) => ({ ...current, muted: !current.muted }));
+            }}
+            aria-label={
+              settings.muted ? "Unmute game audio" : "Mute game audio"
+            }
+            aria-pressed={settings.muted}
+          >
+            <SoundIcon muted={settings.muted} />
+            {settings.muted ? "Sound off" : "Sound on"}
           </button>
         </section>
       )}
@@ -656,6 +759,22 @@ export default function App() {
               <span>PROJECTQUEST</span>
             </div>
             <div className="hud-top-right">
+              <button
+                className="icon-button audio-quick-toggle"
+                onClick={() => {
+                  enableAudio();
+                  setSettings((current) => ({
+                    ...current,
+                    muted: !current.muted,
+                  }));
+                }}
+                aria-label={
+                  settings.muted ? "Unmute game audio" : "Mute game audio"
+                }
+                aria-pressed={settings.muted}
+              >
+                <SoundIcon muted={settings.muted} />
+              </button>
               <div className="clock-block">
                 <b>
                   DAY {game.day} <span>· {clock}</span>
@@ -855,6 +974,17 @@ export default function App() {
               </label>
             ))}
           </div>
+          <AudioSettings
+            preferences={settings}
+            onChange={(preferences) =>
+              setSettings((current) => ({ ...current, ...preferences }))
+            }
+            onEnable={enableAudio}
+            supported={audioStatus.supported}
+            started={audioStatus.started}
+            playing={audioStatus.musicPlaying}
+            error={audioStatus.error}
+          />
           <div className="controls-explained">
             <h3>Workplace controls</h3>
             <p>

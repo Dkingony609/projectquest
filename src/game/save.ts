@@ -1,4 +1,4 @@
-import { applyCommand, createGame } from "./engine";
+import { createGame, replaySavedCommand } from "./engine";
 import { isCommand, isProfile, isRecord } from "./validation";
 import type { GameState, Position } from "./types";
 
@@ -82,6 +82,13 @@ export function parseSave(input: string): {
       error: "The action journal is missing or too large.",
     };
   let restored = createGame(snapshot.profile);
+  // An imported legacy journal may acquire new commands after resuming. Preserve
+  // its prefix; enforce firm choices once the first new-style action appears.
+  const firstFirmChoice = snapshot.journal.findIndex(
+    (command) =>
+      isRecord(command) &&
+      (command.type === "followUp" || command.type === "chooseRecommendation"),
+  );
   for (let index = 0; index < snapshot.journal.length; index += 1) {
     const command: unknown = snapshot.journal[index];
     if (!isCommand(command))
@@ -89,7 +96,11 @@ export function parseSave(input: string): {
         state: null,
         error: `Action ${index + 1} is invalid. The save has not been loaded.`,
       };
-    const result = applyCommand(restored, command);
+    const result = replaySavedCommand(
+      restored,
+      command,
+      firstFirmChoice === -1 || index < firstFirmChoice,
+    );
     if (result.error || result.state === restored)
       return {
         state: null,

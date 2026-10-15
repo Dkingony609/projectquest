@@ -85,3 +85,10 @@ If Chromium is already installed, skip its download and use `CHROMIUM_PATH=/usr/
 - [Decision log](docs/decisions.md): technology, scope, art and accessibility decisions.
 
 Original temporary procedural geometry is used for the current workplace. Bespoke characters, environment assets and audio remain production work. This game teaches general skills; it does not award professional accreditation.
+
+
+## Sound, typography and committed decisions
+
+An original 78 BPM, 32-bar instrumental score (piano, pad, bass and brushed percussion) starts after your first interaction. Settings provide independent music/effects volume and mute; hidden tabs suspend audio. All relevant sound cues also have visible feedback. Audio and the new Manrope/DM Serif Display fonts are self-hosted with no external runtime service. Font licences are in `public/fonts`; the original score recipe is in `src/audio`.
+
+Conversation answers and recommendation responses are now committed immediately: alternatives grey out and remain locked after reopening a panel or reloading. A pressured conversation can be recovered through a separate documented follow-up, preserving the original relationship cost. Evidence fields remain correctable before final submission; this does not change the committed response. Legacy saves retain their prior state and can continue.

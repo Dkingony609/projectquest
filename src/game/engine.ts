@@ -5,9 +5,11 @@ import type {
   CommandResult,
   Feedback,
   GameState,
+  NpcId,
   Objective,
   OptionComparison,
   Profile,
+  ProposalOption,
   RubricFeedback,
   Scores,
   SourceId,
@@ -34,6 +36,48 @@ const alreadyAsked = (
       item.npc === command.npc &&
       item.choice === command.choice,
   );
+
+/** Decision identity comes from the journal, so closing a panel or reloading cannot reset it. */
+export function getConversationChoice(
+  state: GameState,
+  npc: NpcId,
+): "facts" | "pressure" | null {
+  const first = state.journal.find(
+    (item) => item.type === "ask" && item.npc === npc,
+  );
+  return first?.type === "ask" ? first.choice : null;
+}
+
+export function getRecommendationChoice(
+  state: GameState,
+): ProposalOption | null {
+  const first = state.journal.find(
+    (item) =>
+      item.type === "chooseRecommendation" ||
+      item.type === "submitRecommendation",
+  );
+  return first?.type === "chooseRecommendation" ||
+    first?.type === "submitRecommendation"
+    ? first.option
+    : null;
+}
+
+/** Share readiness with the cards: an unready action never creates a commitment. */
+export function getRecommendationError(state: GameState): string | undefined {
+  if (state.phase === "arrival") return "Meet Alex for your assignment first.";
+  if (state.phase !== "investigating")
+    return "A recommendation is already under review.";
+  if (!fullEvidence(state))
+    return "Check all three independent sources: the schedule, Sam and Morgan.";
+  if (!state.issue)
+    return "Record an issue with evidence, owner and a checkpoint first.";
+  if (state.tasks[0].evidence.length === 0)
+    return "Update the delivery card with a source-backed status first.";
+  if (
+    !requiredSources.every((source) => state.issue?.evidence.includes(source))
+  )
+    return "Cite schedule, Sam and Morgan in the issue so the reviewer can trace your recommendation.";
+}
 
 export function createGame(profile: Profile): GameState {
   if (!isProfile(profile))
@@ -149,6 +193,23 @@ export function applyCommand(
   state: GameState,
   command: Command,
 ): CommandResult {
+  return reduceCommand(state, command, false);
+}
+
+/** @internal Replay pre-commitment schema-1 conversations without changing their saved consequences. */
+export function replaySavedCommand(
+  state: GameState,
+  command: Command,
+  legacyConversations: boolean,
+): CommandResult {
+  return reduceCommand(state, command, legacyConversations);
+}
+
+function reduceCommand(
+  state: GameState,
+  command: Command,
+  legacyConversations: boolean,
+): CommandResult {
   if (!isCommand(command)) return fail(state, commandError(command));
   if (state.phase === "debrief")
     return unchanged(
@@ -197,6 +258,16 @@ export function applyCommand(
           state,
           "The mentor review is underway; answer Alex’s question next.",
         );
+      const committedChoice = getConversationChoice(state, command.npc);
+      if (
+        !legacyConversations &&
+        committedChoice &&
+        committedChoice !== command.choice
+      )
+        return fail(
+          state,
+          "Your conversation choice is committed. Follow up for documented evidence without changing your original decision.",
+        );
       if (alreadyAsked(state, command))
         return unchanged(state, "You have already asked this question.");
       const npc = getPack().npcs[command.npc];
@@ -225,6 +296,29 @@ export function applyCommand(
         );
         notice = npc.pressure;
       }
+      break;
+    }
+    case "followUp": {
+      if (state.phase !== "investigating")
+        return fail(
+          state,
+          "Evidence follow-up is available during investigation.",
+        );
+      if (getConversationChoice(state, command.npc) !== "pressure")
+        return fail(
+          state,
+          "A follow-up is available after pressing this person for an unsupported shortcut.",
+        );
+      if (state.evidence.includes(command.npc))
+        return unchanged(state, "The follow-up evidence is already recorded.");
+      const npc = getPack().npcs[command.npc];
+      next.evidence.push(command.npc);
+      event(
+        next,
+        "evidence_followed_up",
+        `Acknowledged the uncertainty and requested documented evidence from ${npc.name}. ${npc.facts} The original pressure and relationship consequence remain recorded.`,
+      );
+      notice = `${npc.facts} Evidence recovered; your original conversation choice and its relationship consequence remain.`;
       break;
     }
     case "updateTask": {
@@ -299,32 +393,37 @@ export function applyCommand(
         "Issue saved with source provenance. Bring your recommendation to Alex.";
       break;
     }
+    case "chooseRecommendation": {
+      const readinessError = getRecommendationError(state);
+      if (readinessError) return fail(state, readinessError);
+      const chosen = getRecommendationChoice(state);
+      if (chosen === command.option)
+        return unchanged(
+          state,
+          "This recommendation choice is already committed.",
+        );
+      if (chosen)
+        return fail(
+          state,
+          "Your recommendation choice is committed. Complete the supporting fields for the selected response.",
+        );
+      event(
+        next,
+        "recommendation_chosen",
+        `Committed to ${getPack().options[command.option].label}. Supporting wording can be completed before submission; Alex still owns approval.`,
+      );
+      notice =
+        "Response committed. Complete the supporting fields and submit it to Alex for review.";
+      break;
+    }
     case "submitRecommendation": {
-      if (state.phase !== "investigating")
-        return fail(state, "A recommendation is already under review.");
-      if (!fullEvidence(state))
+      const readinessError = getRecommendationError(state);
+      if (readinessError) return fail(state, readinessError);
+      const chosen = getRecommendationChoice(state);
+      if (chosen && chosen !== command.option)
         return fail(
           state,
-          "Check all three independent sources: the schedule, Sam and Morgan.",
-        );
-      if (!state.issue)
-        return fail(
-          state,
-          "Record an issue with evidence, owner and a checkpoint first.",
-        );
-      if (state.tasks[0].evidence.length === 0)
-        return fail(
-          state,
-          "Update the delivery card with a source-backed status first.",
-        );
-      if (
-        !requiredSources.every((source) =>
-          state.issue?.evidence.includes(source),
-        )
-      )
-        return fail(
-          state,
-          "Cite schedule, Sam and Morgan in the issue so the reviewer can trace your recommendation.",
+          "Submit the response you committed to; alternative recommendations are locked.",
         );
       next.proposal = {
         ...(command.comparison
@@ -360,6 +459,11 @@ export function applyCommand(
     case "answerReview": {
       if (state.phase !== "review" || !state.proposal)
         return fail(state, "Submit a recommendation before the mentor review.");
+      if (state.reviewAnswer && state.reviewAnswer !== command.answer)
+        return fail(
+          state,
+          "Your mentor review answer is committed. Advance to the delivery checkpoint.",
+        );
       if (state.reviewAnswer)
         return unchanged(
           state,
@@ -654,6 +758,7 @@ export function getFeedback(state: GameState): Feedback | null {
       citations: cite(
         "evidence_inspected",
         "question_asked",
+        "evidence_followed_up",
         "issue_logged",
         "review_answered",
       ),
@@ -712,7 +817,12 @@ export function getFeedback(state: GameState): Feedback | null {
               !state.evidence.includes("safety")
             ? "You recorded a checkpoint and owner. Ask Taylor about acceptance conditions to make the alternate’s follow-up requirements explicit."
             : "You recorded a checkpoint and owner. Keep the confidence statement truthful and make the response conditional on the verification result.",
-      citations: cite("issue_logged", "question_asked", "event_resolved"),
+      citations: cite(
+        "issue_logged",
+        "question_asked",
+        "evidence_followed_up",
+        "event_resolved",
+      ),
     },
   ];
   return {

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, createGame, getFeedback, getObjectives } from "./engine";
+import {
+  applyCommand,
+  createGame,
+  getConversationChoice,
+  getFeedback,
+  getObjectives,
+  getRecommendationChoice,
+  getRecommendationError,
+} from "./engine";
 import { getPack } from "./content";
 import type { Command } from "./types";
 
@@ -40,20 +48,218 @@ describe("CONST-I01 canonical command engine", () => {
       "safety",
     ]);
   });
-  it("pressure cannot create evidence or a supplier guarantee; facts remain a recovery path", () => {
+  it("keeps the first conversation choice while a factual follow-up recovers evidence without restoring trust", () => {
     let state = run(createGame(profile), { type: "brief" });
+    expect(getConversationChoice(state, "supplier")).toBeNull();
     state = run(state, { type: "ask", npc: "supplier", choice: "pressure" });
     expect(state.evidence).toEqual([]);
     expect(state.relationships.Morgan).toBe(56);
+    expect(getConversationChoice(state, "supplier")).toBe("pressure");
     const repeated = applyCommand(state, {
       type: "ask",
       npc: "supplier",
       choice: "pressure",
     });
     expect(repeated.state).toBe(state);
-    state = run(state, { type: "ask", npc: "supplier", choice: "facts" });
+    const switched = applyCommand(state, {
+      type: "ask",
+      npc: "supplier",
+      choice: "facts",
+    });
+    expect(switched.error).toBeTruthy();
+    expect(switched.state).toBe(state);
+    state = run(state, { type: "followUp", npc: "supplier" });
     expect(state.evidence).toEqual(["supplier"]);
+    expect(state.relationships.Morgan).toBe(56);
+    expect(getConversationChoice(state, "supplier")).toBe("pressure");
     expect(state.project.delivery).toBe("unconfirmed");
+    expect(
+      applyCommand(state, { type: "followUp", npc: "supplier" }).state,
+    ).toBe(state);
+  });
+  it("locks factual conversation answers and rejects a follow-up before pressure", () => {
+    for (const npc of ["lead", "supplier", "safety"] as const) {
+      const initial = run(createGame(profile), { type: "brief" });
+      const premature = applyCommand(initial, { type: "followUp", npc });
+      expect(premature.error).toBeTruthy();
+      expect(premature.state).toBe(initial);
+      const asked = run(initial, { type: "ask", npc, choice: "facts" });
+      const snapshot = structuredClone(asked);
+      expect(getConversationChoice(asked, npc)).toBe("facts");
+      expect(
+        applyCommand(asked, { type: "ask", npc, choice: "facts" }).state,
+      ).toBe(asked);
+      const switched = applyCommand(asked, {
+        type: "ask",
+        npc,
+        choice: "pressure",
+      });
+      expect(switched.error).toBeTruthy();
+      expect(switched.state).toBe(asked);
+      const followUp = applyCommand(asked, { type: "followUp", npc });
+      expect(followUp.state).toBe(asked);
+      expect(asked).toEqual(snapshot);
+    }
+  });
+  it("can complete the assignment after pressured conversations through explicit factual follow-ups", () => {
+    let state = run(createGame(profile), { type: "brief" });
+    state = run(state, { type: "inspect", source: "schedule" });
+    for (const npc of ["lead", "supplier", "safety"] as const) {
+      state = run(state, { type: "ask", npc, choice: "pressure" });
+      state = run(state, { type: "followUp", npc });
+      expect(getConversationChoice(state, npc)).toBe("pressure");
+    }
+    state = run(state, {
+      type: "updateTask",
+      taskId: "delivery",
+      status: "blocked",
+      owner: "Morgan",
+      dueDay: 1,
+      blocker: "Truck fault; no receipt",
+      evidence: ["schedule", "supplier"],
+    });
+    state = run(state, { type: "logIssue", issue: investigate().issue! });
+    state = run(state, { type: "chooseRecommendation", option: "wait" });
+    state = run(state, {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    state = run(state, { type: "answerReview", answer: "conditional" });
+    state = run(state, { type: "advanceTime" });
+    expect(state.phase).toBe("debrief");
+    expect(state.project.governance).toBe("compliant");
+    expect(state.relationships).toMatchObject({
+      Sam: 56,
+      Morgan: 56,
+      Taylor: 56,
+    });
+    expect(state.career.completedMissionIds).toEqual(["CONST-I01"]);
+  });
+  it("requires complete source-backed investigation before committing a recommendation", () => {
+    const ready = investigate(false);
+    const missingSources = run(createGame(profile), { type: "brief" });
+    const missingIssue = structuredClone(ready);
+    missingIssue.issue = null;
+    const missingCard = structuredClone(ready);
+    missingCard.tasks[0].evidence = [];
+    const incompleteIssue = structuredClone(ready);
+    incompleteIssue.issue!.evidence = ["supplier"];
+    for (const state of [
+      missingSources,
+      missingIssue,
+      missingCard,
+      incompleteIssue,
+    ]) {
+      const snapshot = structuredClone(state);
+      const result = applyCommand(state, {
+        type: "chooseRecommendation",
+        option: "wait",
+      });
+      expect(result.error).toBe(getRecommendationError(state));
+      expect(result.error).toBeTruthy();
+      expect(result.state).toBe(state);
+      expect(getRecommendationChoice(state)).toBeNull();
+      expect(state).toEqual(snapshot);
+    }
+    expect(getRecommendationError(ready)).toBeUndefined();
+    expect(getRecommendationChoice(ready)).toBeNull();
+  });
+  it("commits a recommendation once and preserves it after rejected edits or a failed submission", () => {
+    const ready = investigate();
+    const state = run(ready, {
+      type: "chooseRecommendation",
+      option: "alternate",
+    });
+    expect(getRecommendationChoice(state)).toBe("alternate");
+    expect(state.phase).toBe("investigating");
+    expect(state.proposal).toBeNull();
+    expect(state.project.actualCost).toBe(0);
+    const snapshot = structuredClone(state);
+    expect(
+      applyCommand(state, { type: "chooseRecommendation", option: "alternate" })
+        .state,
+    ).toBe(state);
+    const changed = applyCommand(state, {
+      type: "chooseRecommendation",
+      option: "wait",
+    });
+    expect(changed.error).toBeTruthy();
+    expect(changed.state).toBe(state);
+    const changedSubmission = applyCommand(state, {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    expect(changedSubmission.error).toBeTruthy();
+    expect(changedSubmission.state).toBe(state);
+    const invalidSubmission = applyCommand(state, {
+      type: "submitRecommendation",
+      option: "alternate",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "",
+    });
+    expect(invalidSubmission.error).toBeTruthy();
+    expect(invalidSubmission.state).toBe(state);
+    expect(getRecommendationChoice(invalidSubmission.state)).toBe("alternate");
+    expect(state).toEqual(snapshot);
+    const submitted = run(state, {
+      type: "submitRecommendation",
+      option: "alternate",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    expect(getRecommendationChoice(submitted)).toBe("alternate");
+    expect(submitted.proposal?.option).toBe("alternate");
+  });
+  it("derives a committed recommendation from a legacy direct submission", () => {
+    const state = run(investigate(), {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    expect(getRecommendationChoice(state)).toBe("wait");
+    expect(
+      state.journal.some((command) => command.type === "chooseRecommendation"),
+    ).toBe(false);
+    const changed = applyCommand(state, {
+      type: "chooseRecommendation",
+      option: "alternate",
+    });
+    expect(changed.error).toBeTruthy();
+    expect(changed.state).toBe(state);
+  });
+  it("keeps the first mentor review answer and its consequences", () => {
+    let state = run(investigate(), {
+      type: "submitRecommendation",
+      option: "wait",
+      confidence: "estimate",
+      impact: "foundation",
+      nextCheck: "10:30",
+    });
+    state = run(state, { type: "answerReview", answer: "guarantee" });
+    const snapshot = structuredClone(state);
+    expect(
+      applyCommand(state, { type: "answerReview", answer: "guarantee" }).state,
+    ).toBe(state);
+    const changed = applyCommand(state, {
+      type: "answerReview",
+      answer: "conditional",
+    });
+    expect(changed.error).toBeTruthy();
+    expect(changed.state).toBe(state);
+    expect(state).toEqual(snapshot);
+    const resolved = run(state, { type: "advanceTime" });
+    expect(resolved.reviewAnswer).toBe("guarantee");
+    expect(resolved.project.governance).toBe("breach");
   });
   it("rejects fabricated completion, baseline changes and unavailable provenance", () => {
     const state = investigate();

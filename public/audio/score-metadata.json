@@ -1,0 +1,13 @@
+{
+  "sampleRate": 44100,
+  "frames": 4342154,
+  "durationSeconds": 98.46154195011339,
+  "peak": 0.76,
+  "rms": 0.139536,
+  "loopBoundaryStep": 0.00574,
+  "title": "First Light at Riverside",
+  "bpm": 78,
+  "bars": 32,
+  "seed": 20261015,
+  "sha256": "4edbf6e14fd66c7a4d6964e2555b658d12f4813887a3df31dbe0e44fe52a2fd4"
+}

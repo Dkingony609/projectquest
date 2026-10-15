@@ -3,6 +3,9 @@ import {
   getFeedback,
   getObjectives,
   getPack,
+  getConversationChoice,
+  getRecommendationChoice,
+  getRecommendationError,
   type Command,
   type GameState,
   type SourceId,
@@ -179,9 +182,8 @@ function Conversation({
   dispatch,
   onClose,
 }: InteractionProps & { kind: "lead" | "supplier" | "safety" }) {
-  const [response, setResponse] = useState<"facts" | "pressure" | null>(
-    state.evidence.includes(kind) ? "facts" : null,
-  );
+  const choice = getConversationChoice(state, kind);
+  const recovered = choice === "pressure" && state.evidence.includes(kind);
   const npc = pack.npcs[kind];
   const names = {
     lead: [
@@ -198,10 +200,6 @@ function Conversation({
     ],
   };
   const enabled = state.phase === "investigating";
-  const speak = (choice: "facts" | "pressure") => {
-    dispatch({ type: "ask", npc: kind, choice });
-    if (enabled) setResponse(choice);
-  };
   return (
     <>
       <div className="pq-person">
@@ -214,44 +212,85 @@ function Conversation({
         </div>
       </div>
       <blockquote className="pq-speech">
-        {response === "facts"
-          ? npc.facts
-          : response === "pressure"
-            ? npc.pressure
-            : npc.greeting}
+        {recovered
+          ? `Following up with documented evidence: ${npc.facts}`
+          : choice === "facts"
+            ? npc.facts
+            : choice === "pressure"
+              ? npc.pressure
+              : npc.greeting}
       </blockquote>
       {state.phase === "arrival" && (
         <div className="pq-help">
           Meet Alex in the office to receive your assignment first.
         </div>
       )}
-      {enabled && (
-        <div className="pq-choice-grid">
+      {(enabled || choice) && (
+        <>
+          <div className="pq-help">
+            {choice
+              ? "Your first response is committed. Its consequences stay in the project journal."
+              : "Choose your response carefully. Selecting it commits this conversation and locks the alternatives."}
+          </div>
+          <div className="pq-choice-grid">
+            <button
+              className="pq-choice"
+              aria-label={names[kind][0]}
+              aria-pressed={choice === "facts"}
+              disabled={!enabled || choice !== null}
+              onClick={() =>
+                dispatch({ type: "ask", npc: kind, choice: "facts" })
+              }
+            >
+              {choice === "facts" && (
+                <span className="pq-choice-status">✓ Selected · committed</span>
+              )}
+              <strong>{names[kind][0]}</strong>
+              <span>
+                {kind === "lead"
+                  ? "Understand the affected work and what the team can do next."
+                  : kind === "supplier"
+                    ? "Separate confirmed information from the estimated arrival."
+                    : "Understand who reviews materials and what approval requires."}
+              </span>
+            </button>
+            <button
+              className="pq-choice"
+              aria-label={names[kind][1]}
+              aria-pressed={choice === "pressure"}
+              disabled={!enabled || choice !== null}
+              onClick={() =>
+                dispatch({ type: "ask", npc: kind, choice: "pressure" })
+              }
+            >
+              {choice === "pressure" && (
+                <span className="pq-choice-status">✓ Selected · committed</span>
+              )}
+              <strong>{names[kind][1]}</strong>
+              <span>
+                {kind === "safety"
+                  ? "Explore whether speed changes the review conditions."
+                  : "Emphasise the meeting deadline and ask for certainty."}
+              </span>
+            </button>
+          </div>
+        </>
+      )}
+      {choice === "pressure" && (
+        <div className="pq-help">
+          <p>
+            You can acknowledge the uncertainty and request documented evidence.
+            This follow-up keeps your original choice and its relationship
+            consequence.
+          </p>
           <button
-            className="pq-choice"
-            aria-label={names[kind][0]}
-            onClick={() => speak("facts")}
+            className="secondary"
+            disabled={!enabled || recovered}
+            onClick={() => dispatch({ type: "followUp", npc: kind })}
           >
-            <strong>{names[kind][0]}</strong>
-            <span>
-              {kind === "lead"
-                ? "Understand the affected work and what the team can do next."
-                : kind === "supplier"
-                  ? "Separate confirmed information from the estimated arrival."
-                  : "Understand who reviews materials and what approval requires."}
-            </span>
-          </button>
-          <button
-            className="pq-choice"
-            aria-label={names[kind][1]}
-            onClick={() => speak("pressure")}
-          >
-            <strong>{names[kind][1]}</strong>
-            <span>
-              {kind === "safety"
-                ? "Explore whether speed changes the review conditions."
-                : "Emphasise the meeting deadline and ask for certainty."}
-            </span>
+            {recovered
+              ? "Evidence follow-up recorded"
+              : "Acknowledge uncertainty and request evidence"}
           </button>
         </div>
       )}
@@ -809,9 +848,7 @@ function Board({
 }
 
 function Recommendation({ state, dispatch, onClose }: InteractionProps) {
-  const [option, setOption] = useState<
-    "wait" | "alternate" | "promise" | "unauthorised" | null
-  >(null);
+  const option = getRecommendationChoice(state);
   const [confidence, setConfidence] = useState<"estimate" | "guaranteed" | "">(
     "",
   );
@@ -826,14 +863,8 @@ function Recommendation({ state, dispatch, onClose }: InteractionProps) {
   const [error, setError] = useState("");
   if (state.phase === "review")
     return <Review state={state} dispatch={dispatch} onClose={onClose} />;
-  const ready =
-    ["schedule", "lead", "supplier"].every((source) =>
-      state.evidence.includes(source as SourceId),
-    ) &&
-    Boolean(state.issue) &&
-    Boolean(
-      state.tasks.find((task) => task.id === "delivery")?.evidence.length,
-    );
+  const readinessError = getRecommendationError(state);
+  const ready = !readinessError;
   const descriptions = {
     wait: "Retain the current supplier. Notify the crews, verify at 10:30, and resequence preparatory work if delayed. Forecast Day 13; +400 cr standby cost.",
     alternate:
@@ -920,11 +951,15 @@ function Recommendation({ state, dispatch, onClose }: InteractionProps) {
       </blockquote>
       {!ready && (
         <div className="pq-help">
-          Before submitting: inspect the schedule, speak to Sam and Morgan,
-          update the delivery card, and record your issue. Your journal tracks
-          the missing steps.
+          Before choosing: {readinessError} Your journal tracks the missing
+          steps.
         </div>
       )}
+      <div className="pq-help">
+        {option
+          ? "Response committed. You can complete or correct the supporting fields before submission. Alex still reviews the recommendation."
+          : "Selecting a response commits your recommendation and locks the alternatives, including after closing or reloading. Complete your supporting fields, then submit it for Alex’s review."}
+      </div>
       <div className="pq-report-context">
         {sourceOrder.map((source) => (
           <span
@@ -945,9 +980,16 @@ function Recommendation({ state, dispatch, onClose }: InteractionProps) {
                 className="pq-choice"
                 aria-label={pack.options[id].label}
                 aria-pressed={option === id}
-                onClick={() => setOption(id)}
-                disabled={state.phase !== "investigating"}
+                onClick={() =>
+                  dispatch({ type: "chooseRecommendation", option: id })
+                }
+                disabled={!ready || option !== null}
               >
+                {option === id && (
+                  <span className="pq-choice-status">
+                    ✓ Selected · committed
+                  </span>
+                )}
                 <span className="pq-choice-index">RESPONSE 0{index + 1}</span>
                 <strong>{pack.options[id].label}</strong>
                 <span>{descriptions[id]}</span>
@@ -1112,48 +1154,67 @@ function Review({ state, dispatch, onClose }: InteractionProps) {
           </table>
         </div>
       )}
-      {!answered ? (
-        <div className="pq-choice-grid">
-          <button
-            className="pq-choice"
-            aria-label="Verify at 10:30 and keep the plan conditional"
-            onClick={() =>
-              dispatch({ type: "answerReview", answer: "conditional" })
-            }
-          >
-            <strong>Verify at 10:30 and keep the plan conditional</strong>
-            <span>
-              Confirm with Morgan and Sam. Any alternate needs your cost
-              approval and Taylor’s acceptance check; notify crews and
-              resequence if the delivery misses.
-            </span>
-          </button>
-          <button
-            className="pq-choice"
-            aria-label="Treat the replacement estimate as confirmed"
-            onClick={() =>
-              dispatch({ type: "answerReview", answer: "guarantee" })
-            }
-          >
-            <strong>Treat the replacement estimate as confirmed</strong>
-            <span>
-              Give the team a definite answer now to keep work focused on the
-              original date.
-            </span>
-          </button>
-          <button
-            className="pq-choice"
-            aria-label="Wait for someone else to provide an update"
-            onClick={() => dispatch({ type: "answerReview", answer: "defer" })}
-          >
-            <strong>Wait for someone else to provide an update</strong>
-            <span>
-              Avoid making an assumption, but leave ownership and the
-              verification time open.
-            </span>
-          </button>
-        </div>
-      ) : (
+      <div className="pq-help">
+        {answered
+          ? "Your selected review answer is committed."
+          : "Selecting an answer commits your response and locks the alternatives."}
+      </div>
+      <div className="pq-choice-grid">
+        <button
+          className="pq-choice"
+          aria-label="Verify at 10:30 and keep the plan conditional"
+          aria-pressed={state.reviewAnswer === "conditional"}
+          disabled={answered}
+          onClick={() =>
+            dispatch({ type: "answerReview", answer: "conditional" })
+          }
+        >
+          {state.reviewAnswer === "conditional" && (
+            <span className="pq-choice-status">✓ Selected · committed</span>
+          )}
+          <strong>Verify at 10:30 and keep the plan conditional</strong>
+          <span>
+            Confirm with Morgan and Sam. Any alternate needs your cost approval
+            and Taylor’s acceptance check; notify crews and resequence if the
+            delivery misses.
+          </span>
+        </button>
+        <button
+          className="pq-choice"
+          aria-label="Treat the replacement estimate as confirmed"
+          aria-pressed={state.reviewAnswer === "guarantee"}
+          disabled={answered}
+          onClick={() =>
+            dispatch({ type: "answerReview", answer: "guarantee" })
+          }
+        >
+          {state.reviewAnswer === "guarantee" && (
+            <span className="pq-choice-status">✓ Selected · committed</span>
+          )}
+          <strong>Treat the replacement estimate as confirmed</strong>
+          <span>
+            Give the team a definite answer now to keep work focused on the
+            original date.
+          </span>
+        </button>
+        <button
+          className="pq-choice"
+          aria-label="Wait for someone else to provide an update"
+          aria-pressed={state.reviewAnswer === "defer"}
+          disabled={answered}
+          onClick={() => dispatch({ type: "answerReview", answer: "defer" })}
+        >
+          {state.reviewAnswer === "defer" && (
+            <span className="pq-choice-status">✓ Selected · committed</span>
+          )}
+          <strong>Wait for someone else to provide an update</strong>
+          <span>
+            Avoid making an assumption, but leave ownership and the verification
+            time open.
+          </span>
+        </button>
+      </div>
+      {answered && (
         <>
           <div className="pq-help">
             Your review answer is recorded.{" "}
