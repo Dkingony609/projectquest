@@ -1,3 +1,8 @@
+import type {
+  CampaignCommand,
+  MissionRecord,
+  ScheduleMissionState,
+} from "./day2-types";
 export type SourceId = "schedule" | "lead" | "supplier" | "safety";
 export type NpcId = "lead" | "supplier" | "safety";
 export type ProposalOption = "wait" | "alternate" | "promise" | "unauthorised";
@@ -94,6 +99,7 @@ export interface GameEvent {
   minutes: number;
 }
 export type Command =
+  | CampaignCommand
   | { type: "brief" }
   | { type: "inspect"; source: SourceId }
   | { type: "ask"; npc: NpcId; choice: "facts" | "pressure" }
@@ -123,7 +129,9 @@ export interface GameState {
   version: 1;
   profile: Profile;
   position: Position;
-  missionId: "CONST-I01";
+  missionId: "CONST-I01" | "CONST-I02";
+  schedule?: ScheduleMissionState;
+  missionHistory?: MissionRecord[];
   seed: number;
   phase: "arrival" | "investigating" | "review" | "debrief";
   day: number;

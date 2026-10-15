@@ -10,6 +10,8 @@ import {
   applyCommand,
   createGame,
   getObjectives,
+  getFeedback,
+  replayMission,
   parseSave,
   serializeSave,
   STORAGE_KEY,
@@ -299,20 +301,26 @@ export default function App() {
     if (result.state !== current) {
       if (result.state.phase === "debrief" && current.phase !== "debrief")
         gameAudio.playCue(
-          result.state.project.governance === "compliant"
-            ? "success"
-            : "setback",
+          getFeedback(result.state)?.governancePassed ? "success" : "setback",
         );
       else
         gameAudio.playCue(
-          ["ask", "chooseRecommendation", "answerReview", "followUp"].includes(
-            command.type,
-          )
+          [
+            "ask",
+            "chooseRecommendation",
+            "chooseScheduleRecommendation",
+            "answerReview",
+            "followUp",
+          ].includes(command.type)
             ? "decision"
             : "notification",
         );
       gameRef.current = result.state;
       setGame(result.state);
+      if (result.state.missionId !== current.missionId) {
+        setPanel(null);
+        setWorldEpoch((value) => value + 1);
+      }
     }
     if (result.state.phase === "debrief" && current.phase !== "debrief")
       setPanel("debrief");
@@ -395,13 +403,15 @@ export default function App() {
 
   function replay() {
     if (!game) return;
-    const next = createGame(game.profile);
+    const next = replayMission(game);
     setGame(next);
     gameRef.current = next;
     setWorldEpoch((value) => value + 1);
     setPanel(null);
     setNotice(
-      "Practice run started. Career evidence is assessed fresh; replay does not grant a promotion.",
+      game.missionId === "CONST-I02"
+        ? "Day 2 practice started from your actual Day 1 outcome. Day 2 rewards are replaced, so replay does not accumulate XP."
+        : "Practice run started. Career evidence is assessed fresh; replay does not grant a promotion.",
     );
     setNoticeError(false);
     setScreen("play");
@@ -445,6 +455,8 @@ export default function App() {
       >
         <WorldCanvas
           checkpoint={worldEpoch}
+          missionDay={game?.day ?? 1}
+          missionResolved={game?.phase === "debrief"}
           active={active}
           blocked={Boolean(panel)}
           appearance={active && game ? game.profile.appearance : appearance}
@@ -529,7 +541,7 @@ export default function App() {
               </span>
             </div>
             <p className="quiet">
-              First-day construction chapter · Single player · No account needed
+              Two construction chapters · Single player · No account needed
             </p>
           </div>
           <button
@@ -805,11 +817,23 @@ export default function App() {
             </div>
           </header>
           <aside className="mission-hud">
-            <p className="eyebrow">CONSTRUCTION · CHAPTER 01</p>
+            <p className="eyebrow">
+              CONSTRUCTION · CHAPTER {String(game.day).padStart(2, "0")}
+            </p>
             <h2>
-              The Missing
-              <br />
-              Materials
+              {game.missionId === "CONST-I02" ? (
+                <>
+                  The Slipping
+                  <br />
+                  Milestone
+                </>
+              ) : (
+                <>
+                  The Missing
+                  <br />
+                  Materials
+                </>
+              )}
             </h2>
             <div className="mission-progress">
               <span
@@ -823,17 +847,21 @@ export default function App() {
             </p>
             <p className="next-action">
               {nextObjective?.label ??
-                "First day reviewed. Your career has begun."}
+                "Assignment reviewed. Your case study is saved."}
             </p>
             {game.profile.assistance === "guided" && (
               <p className="hint">
                 {game.phase === "arrival"
                   ? "Find Alex in the field office. Walk around the planning table to meet your mentor."
                   : game.evidence.length < 3
-                    ? "Compare the schedule with Sam’s crew constraints and Morgan’s delivery estimate."
+                    ? game.missionId === "CONST-I02"
+                      ? "Inspect the dependency schedule. Ask Sam about the survey and Taylor about the two acceptance gates."
+                      : "Compare the schedule with Sam’s crew constraints and Morgan’s delivery estimate."
                     : game.phase === "debrief"
                       ? "Review how your decisions changed the project. Try another approach to compare outcomes."
-                      : "Keep estimates conditional. Record an owner, a due day, and a next check before reporting."}
+                      : game.missionId === "CONST-I02"
+                        ? "Record both successor links and both pour predecessors, then assign Sam to the 11:00 check."
+                        : "Keep estimates conditional. Record an owner, a due day, and a next check before reporting."}
               </p>
             )}
             <button className="text-button" onClick={() => setPanel("journal")}>

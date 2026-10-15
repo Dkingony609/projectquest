@@ -48,9 +48,38 @@ The world cannot be represented as verified by only counting a canvas element. B
 
 ## End-to-end gameplay walkthrough
 
-Start a new career, customise the player, choose construction, enter the workplace, approach the mentor and accept the briefing. Inspect the schedule, speak with the foreman, and confirm supplier status. Update a project artefact with source-backed facts, owner, dependency impact, uncertainty and a next check. Submit an authorised recommendation, answer the confidence/impact review, advance the coordination checkpoint, and read the changed forecast, budget/trust trade-off and rubric feedback. Reload and confirm identity, mission and project state survived without reapplying the event.
+Start a new career, customise the player, choose construction, enter the workplace, approach the mentor and accept the briefing. Inspect the schedule, speak with the foreman, and confirm supplier status. Update a project artefact with source-backed facts, owner, dependency impact, uncertainty and a next check. Commit and submit an authorised recommendation, answer the confidence/impact review, advance the coordination checkpoint, and read the changed forecast, budget/trust trade-off and rubric feedback. Reload and confirm identity, mission and project state survived without reapplying the event.
 
 Repeat using the other legitimate option and one governance failure branch. Use the alternative interaction path at least once. Test a narrow viewport for usable panel controls and scrolling, while distinguishing responsive UI from an unvalidated mobile 3D release.
+
+## Two-chapter scheduling and persistence acceptance
+
+These are required checks for the Day 2 increment; their presence in this guide does not claim they have already run.
+
+| Check                        | Required assertion                                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chapter entry                | Continue is available only from completed Day 1; profile, accumulated XP, relationships, forecast, costs, trust and the first case study survive                         |
+| New investigation            | Day 2 starts with its own evidence; schedule, Sam and Taylor are required, Morgan is optional; Day 1 response locks do not block new conversations                       |
+| Real scheduling tool         | Duration inputs and predecessor checkboxes recalculate timings from the current graph, including changed task duration and each parallel branch                          |
+| Graph validation             | Duplicate IDs, invalid/non-whole durations, missing predecessors and cycles are rejected; valid parallel paths use the maximum predecessor finish                        |
+| Diamond evidence             | The saved plan includes survey → inspection, survey → off-site formwork, and both branches → pour, with Sam's verified two-day survey                                    |
+| Baseline and forecast        | Four-day baseline vs five-day verified chain moves the carried forecast by one; plan editing does not change the approved baseline or commit cost                        |
+| Ownership and provenance     | Save requires schedule/Sam/Taylor evidence, Sam as owner and the 11:00 check; rejected commands preserve canonical state                                                 |
+| Committed choices            | NPC answer, response card and mentor answer remain selected while alternatives stay disabled after reopening and reload; premature rejected actions create no commitment |
+| Evidence recovery            | A pressured conversation can be followed up for facts without restoring the original relationship cost or unlocking the answer                                           |
+| Legitimate responses         | Waiting adds one day with no new spend; approved extra-team support recovers the additional day for 1,200 credits after capacity/acceptance checks                       |
+| Approval boundary            | A submitted proposal cannot authorise spending; bypass/unsupported assurance is challenged, and no unsafe work or waived acceptance gate is applied                      |
+| Event and reward idempotency | Repeated advance/transition/completion cannot apply cost or XP twice; Day 2 replay reconstructs the actual Day 1 result and replaces Day 2 rewards                       |
+| Career history               | Both completed case studies retain per-mission scores, XP and outcomes; the intern role and prior consequences remain                                                    |
+| Original save fixtures       | Genuine schema-1 in-progress and completed journals, including historical dual-answer conversations, replay under their original semantics before migration              |
+| Legacy preservation          | Migrated outcomes/scores are unchanged; edited legacy snapshots are rejected; schema-2 export/reload/continuation preserves the legacy replay prefix                     |
+| New save integrity           | Schema-2 checkpoints across both chapters reconstruct from the journal; altered plan/metrics, unsupported versions, duplicate and out-of-order commands are rejected     |
+
+Continue the Day 1 walkthrough into Day 2. Accept Alex's new briefing, inspect the diamond schedule, obtain Sam/Taylor evidence, enter the two-day survey and all four links, save Sam's 11:00 follow-up, and compare both response estimates. Commit one response, submit conditional wording, answer the mentor review and advance to 11:00. Verify the forecast/cost delta and both career case studies, then reload and replay Day 2 to check that the prior outcome is retained and rewards do not accumulate. Repeat for the second legitimate response and a rejected bypass or assurance.
+
+## Presentation and local assets
+
+Verify that the Ogg/MP3 score and WOFF2 fonts resolve from the build without runtime third-party requests. Audio should begin after a user gesture, obey independent persisted music/effects volume and mute, suspend in hidden tabs and resume safely. Browser checks should inspect actual audio output where supported and retain visible cues when audio is unavailable. Check that font licence/provenance files remain present; score-authoring tools are optional and must not become install/start prerequisites. Signal validation and browser output checks do not establish human listening quality.
 
 ## Research and release gates
 
@@ -68,5 +97,4 @@ Repeat using the other legitimate option and one governance failure branch. Use 
 
 Initial documentation defines intended checks only. The milestone owner records the commands actually run, browser behavior observed, failures repaired, remaining limitations, branch and verified remote commit when delivering M1/M2. Remote delivery and a production build should never be called a public deployment unless deployment was separately performed and checked.
 
-
-Current engineering result: the frozen-lock installation, TypeScript/production build, ESLint, 39 unit/integration tests and six Chromium acceptance tests passed in this instance. Exact scope, repaired failures and limitations are in [verification.md](verification.md). Use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- --workers=1` on this CPU-only cloud machine to avoid competing software-rendered browsers. These results do not complete the separate research, assistive-technology and target-hardware gates.
+Record current commands, counts, failures and verified remote commits in [verification.md](verification.md) after each run. Earlier results apply only to their recorded revision and scope; they do not validate new scheduling or migration behavior. Use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- --workers=1` on this CPU-only cloud machine to avoid competing software-rendered browsers. Automated engineering checks do not complete the separate research, assistive-technology, listening-review and target-hardware gates.

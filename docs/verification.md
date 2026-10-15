@@ -43,12 +43,30 @@ Delivery: M1 commit `e814373` and M2 commit `5c1836a` were initially local becau
 
 Reusable environment install_script and start_skill were saved as a configuration draft. Saving did not execute or publish that draft. The implementation is now available from its remote development branch; fresh-task environment restoration is not independently verified. Environment publication remains separate from GitHub delivery.
 
-
 Final reproducibility check: `npm --cache /workspace/.cache/projectquest-npm ci` passed from the frozen lockfile, followed by a passing build, lint and all 39 tests. Source formatting was normalised without logic changes. Initial UI JavaScript is approximately 309 kB (94 kB gzip); the separately loaded Three.js world is approximately 564 kB (144 kB gzip). No chunk-size warning remains. GitHub Actions checks are defined and are now present on the pushed branch. Remote workflow results have not been checked; the passing checks reported here are local results.
-
 
 ## Feedback milestone — music, typography and committed choices
 
 Implemented the original 98-second “First Light at Riverside” instrumental, scene mixing and musical effects; gesture-safe playback, music/effects levels, mute, hidden-tab suspension and graceful no-audio support. Added self-hosted Manrope and DM Serif Display with SIL OFL notices. Committed dialogue and recommendation choices are canonical, visibly disabled and retained across panels/saves; a separate documented recovery preserves a pressured conversation's cost. Old save journals remain replay-compatible.
 
 Verified: build and TypeScript, ESLint, 52 unit/integration tests and eight Chromium acceptance tests passed. The new audio browser test decoded and played the real score, measured nonzero post-master output, verified zero music output at volume zero and mute, reloaded settings, loaded actual font files, and checked graceful unsupported-audio behavior. Existing complete Day 1 paths, movement, save/resume and portrait controls still passed. Signal checks of the rendered score record peak0.76, RMS0.1395 and a bounded loop seam; no subjective listening-panel claim is made. No extra mission is claimed until the next milestone.
+
+## Feedback milestone — The Slipping Milestone (v0.2.0)
+
+Implemented CONST-I02 in the same construction campaign: an explicit Day 1 → Day 2 transition carries the profile, relationships, project forecast/cost/trust, event journal and earned XP. The learner inspects the schedule, verifies the survey with Sam and acceptance with Taylor, edits four task durations and four predecessor links, and saves Sam’s 11:00 follow-up. The pure scheduler computes early/late dates, float and critical activities. The baseline stays fixed while the working forecast reflects the verified chain.
+
+Four committed responses have distinct outcomes. An honest revised sequence adds one day without extra spend; approved survey support recovers the additional day for 1,200 credits after verification. Unsupported promises or inspection-bypass proposals are rejected and incur coordination consequences; unsafe work is never executed. Source-cited feedback and both case studies persist, and replay restores the actual Day 1 checkpoint instead of stacking Day 2 rewards.
+
+New envelopes use schema 2 while retaining the existing browser storage key. A literal pre-campaign schema-1 fixture, including a historically permitted dual-answer conversation, loads with identical project values, scores and history; it can continue, re-save, complete Day 2 and replay. Invalid graphs, missing source links, edited canonical state and duplicate completion are rejected. Equivalent reordered plans are normalized and do not add duplicate events.
+
+Local production build/TypeScript, ESLint and all 89 unit/integration tests pass. The full Chromium run completed all 11 existing acceptance cases in 5.9 minutes, including the three new Day 2 paths: approved support with legacy migration/reload/replay, blocked inspection bypass, and honest revised sequence with two career records. Audio playback/output, fonts, Day 1 branches, corrupt-save recovery, portrait controls and real character movement still passed.
+
+A twelfth browser case checks the read-only Day 2 dependency tool at 390px width and keyboard navigation. Reviewing inherited fieldset disabling identified a focus-trap edge: disabled descendants are now excluded using `:disabled`. Both this case and the existing portrait/focus case passed after correction. Dependency arrows use inline SVG so font coverage does not affect the graph. The focused Day 2 check is repeated after that presentation update; no gameplay rules changed. CI runs the same single-worker browser command to avoid competing software-rendered scenes.
+
+An initial browser attempt reused a development server that exited during the Day 1 reload, producing connection-refused failures. It was rerun against a persistent server owned by this task; that completed run is the acceptance evidence above. An earlier Day 2 test locator was corrected to include the toolbar's shortcut-bearing accessible label. Failed or interrupted attempts were not counted as passes.
+
+A separate HTTP-served production smoke loaded the real built app, continued an original save into Day 2, displayed the 3D workplace and planning tool, confirmed portrait fields fit, checked keyboard tabs, and retrieved the bundled score/font assets. No page errors or failed resources occurred. Screenshots were inspected. These are local results; the remote GitHub Actions run and a public deployment are not claimed.
+
+Delivery branch: `feat/projectquest-browser`. The Day 2 commit records this milestone; its exact remote SHA is independently checked after pushing. The previous sound/font/commitment milestone was pushed and verified as `6018a38d8a9bc32d37817dfdecec0eaa90d36176`. The downloadable static archive and Git source bundle are regenerated from the final build/commit outside the checkout.
+
+Limits: two construction internship chapters, authored interim geometry, discrete checkpoints and a bounded scheduling scenario. Day 3 onward, other industries and promotions remain future work. No public deployment, target-hardware FPS, human learning-effectiveness, listening-panel or formal assistive-technology validation is claimed.

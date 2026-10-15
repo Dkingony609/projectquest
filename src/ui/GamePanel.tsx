@@ -11,6 +11,7 @@ import {
   type SourceId,
 } from "../game/index";
 import Dialog from "./Dialog";
+import Day2Panel from "./Day2Panel";
 import "./panels.css";
 
 export type PanelKind =
@@ -1330,7 +1331,7 @@ function Career({ state }: { state: GameState }) {
           <small>CAREER XP</small>
         </div>
       </div>
-      <h3>Demonstrated evidence · Day 1</h3>
+      <h3>Demonstrated evidence · Day {state.day}</h3>
       <div className="pq-schedule-summary pq-competency-grid">
         {(Object.keys(labels) as (keyof typeof labels)[]).map((id) => (
           <div className="pq-stat" key={id}>
@@ -1350,6 +1351,21 @@ function Career({ state }: { state: GameState }) {
         assignment does not award professional accreditation or an automatic
         promotion.
       </p>
+      {!!state.missionHistory?.length && (
+        <>
+          <h3>Completed case studies</h3>
+          <ol className="pq-list">
+            {state.missionHistory.map((record) => (
+              <li key={record.missionId}>
+                <strong>
+                  Day {record.day} · {record.title} · +{record.xpEarned} XP
+                </strong>
+                <p>{record.outcome}</p>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
       <h3>Achievements</h3>
       <div className="pq-chip-list">
         {state.career.achievements.length ? (
@@ -1381,9 +1397,9 @@ function Career({ state }: { state: GameState }) {
         ))}
       </ol>
       <div className="pq-informational">
-        Next planned mission: The Slipping Milestone. The first-week and
-        coordinator arcs are on the development roadmap; they are not playable
-        in this release.
+        Two playable internship assignments: The Missing Materials and The
+        Slipping Milestone. Day 3 and the coordinator career arc remain on the
+        development roadmap.
       </div>
     </>
   );
@@ -1391,10 +1407,14 @@ function Career({ state }: { state: GameState }) {
 
 function Debrief({
   state,
+  dispatch,
   onReplay,
   onMenu,
   onClose,
-}: Pick<GamePanelProps, "state" | "onReplay" | "onMenu" | "onClose">) {
+}: Pick<
+  GamePanelProps,
+  "state" | "dispatch" | "onReplay" | "onMenu" | "onClose"
+>) {
   const feedback = getFeedback(state);
   if (!feedback)
     return (
@@ -1484,13 +1504,19 @@ function Debrief({
         </div>
       </div>
       <div className="pq-informational">
-        {feedback.next} The next campaign mission is planned and not yet
-        playable. Replay starts a fresh practice save and does not accumulate
-        rewards.
+        Day 2 is ready: The Slipping Milestone. Continue with this project’s
+        forecast, costs, trust and career evidence. Replay starts a fresh Day 1
+        practice save and does not accumulate rewards.
       </div>
       <div className="pq-actions">
-        <button className="primary" onClick={onClose}>
-          Explore your workplace <span>↗</span>
+        <button
+          className="primary"
+          onClick={() => dispatch({ type: "startNextMission" })}
+        >
+          Continue to Day 2 <span aria-hidden="true">↗</span>
+        </button>
+        <button className="secondary" onClick={onClose}>
+          Explore your workplace
         </button>
         <button className="secondary" onClick={onReplay}>
           Replay assignment
@@ -1516,6 +1542,21 @@ export function GamePanel({
   onReplay,
   onMenu,
 }: GamePanelProps) {
+  if (
+    state.missionId === "CONST-I02" &&
+    kind !== "career" &&
+    kind !== "settings"
+  )
+    return (
+      <Day2Panel
+        kind={kind}
+        state={state}
+        dispatch={dispatch}
+        onClose={onClose}
+        onReplay={onReplay}
+        onMenu={onMenu}
+      />
+    );
   const titles: Record<PanelKind, string> = {
     mentor:
       state.phase === "review"
@@ -1573,6 +1614,7 @@ export function GamePanel({
       {kind === "debrief" && (
         <Debrief
           state={state}
+          dispatch={dispatch}
           onReplay={onReplay}
           onMenu={onMenu}
           onClose={onClose}

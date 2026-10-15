@@ -34,7 +34,7 @@ export default function Dialog({
       if (event.key !== "Tab" || !panel.current) return;
       const elements = Array.from(
         panel.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
         ),
       ).filter((element) => element.getClientRects().length > 0);
       const first = elements[0];

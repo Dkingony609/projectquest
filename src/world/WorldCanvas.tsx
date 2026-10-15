@@ -27,6 +27,8 @@ export interface WorldPosition {
 }
 
 interface WorldCanvasProps {
+  missionDay?: number;
+  missionResolved?: boolean;
   checkpoint?: number;
   active: boolean;
   blocked: boolean;
@@ -393,6 +395,8 @@ function createWorld(scene: THREE.Scene): {
   people: Character[];
   delivery: THREE.Group;
   cutaway: THREE.Group;
+  missionSign: THREE.Mesh;
+  siteSign: THREE.Mesh;
 } {
   const cream = surface(PALETTE.cream);
   const wall = surface("#dce3da");
@@ -483,7 +487,15 @@ function createWorld(scene: THREE.Scene): {
   // The board is a true gameplay target; its large colour blocks are readable in 3D.
   box(scene, 7.3, 1.62, -5.42, 3.5, 2.0, 0.14, dark);
   box(scene, 7.3, 1.62, -5.33, 3.27, 1.77, 0.025, cream);
-  sign(scene, "THE MISSING MATERIALS", 7.3, 2.2, -5.3, 3.05, 0.26);
+  const missionSign = sign(
+    scene,
+    "THE MISSING MATERIALS",
+    7.3,
+    2.2,
+    -5.3,
+    3.05,
+    0.26,
+  );
   for (let column = 0; column < 3; column++) {
     const x = 6.28 + column * 1.02;
     box(
@@ -551,7 +563,7 @@ function createWorld(scene: THREE.Scene): {
     cylinder(scene, x, 0.57, -10.9, 0.033, 1.0, surface("#efb644"));
   }
   box(scene, -5.6, 0.87, -10.9, 6.2, 0.08, 0.08, surface("#efb644"));
-  sign(
+  const siteSign = sign(
     scene,
     "FOUNDATIONS  ·  DELIVERY PENDING",
     -5.5,
@@ -679,7 +691,7 @@ function createWorld(scene: THREE.Scene): {
     scene.add(ring);
   }
   batchStaticGeometry(cutaway);
-  return { people, delivery, cutaway };
+  return { people, delivery, cutaway, missionSign, siteSign };
 }
 
 function editableEvent(event: KeyboardEvent): boolean {
@@ -876,6 +888,7 @@ export default function WorldCanvas(props: WorldCanvasProps) {
     let lastPosition = { x: position.x, z: position.z, yaw: position.yaw };
     let appearanceKey = "";
     let previousOutcome = propsRef.current.outcome;
+    let previousMissionSign = "";
     let statsStarted = performance.now();
     let statsFrames = 0;
     let healthy = true;
@@ -1054,7 +1067,7 @@ export default function WorldCanvas(props: WorldCanvasProps) {
       elapsed += dt;
       saveElapsed += dt;
       const current = propsRef.current;
-      const visualKey = `${current.active}/${current.blocked}/${current.checkpoint}/${current.lowSpec}/${current.outcome}/${current.appearance.skin}/${current.appearance.shirt}/${current.appearance.hair}`;
+      const visualKey = `${current.active}/${current.blocked}/${current.checkpoint}/${current.lowSpec}/${current.missionDay}/${current.missionResolved}/${current.outcome}/${current.appearance.skin}/${current.appearance.shirt}/${current.appearance.hair}`;
       // A paused tool/dialog needs one backdrop frame, not continuous expensive GPU work.
       if (current.blocked && visualKey === lastVisualKey && !renderDirty) {
         keys.clear();
@@ -1188,6 +1201,31 @@ export default function WorldCanvas(props: WorldCanvasProps) {
           person.rightArm.rotation.z =
             0.035 + Math.sin(elapsed * 1.3 + index + 1) * 0.025;
         }
+      const missionSignKey = `${current.missionDay ?? 1}/${Boolean(current.missionResolved)}`;
+      if (previousMissionSign !== missionSignKey) {
+        previousMissionSign = missionSignKey;
+        const missionDay = current.missionDay ?? 1;
+        const replaceSign = (mesh: THREE.Mesh, text: string) => {
+          const material = mesh.material as THREE.MeshBasicMaterial;
+          material.map?.dispose();
+          material.map = textTexture(text, 1024, 256, PALETTE.dark);
+          material.needsUpdate = true;
+        };
+        replaceSign(
+          world.missionSign,
+          missionDay === 2 ? "THE SLIPPING MILESTONE" : "THE MISSING MATERIALS",
+        );
+        replaceSign(
+          world.siteSign,
+          missionDay === 2
+            ? current.missionResolved
+              ? "SEQUENCE REVIEWED  ·  ACCEPTANCE RETAINED"
+              : "SURVEY RELEASE  ·  TWO TEAMS WAIT"
+            : current.missionResolved
+              ? "DELIVERY CHECKPOINT  ·  REVIEW RECORDED"
+              : "FOUNDATIONS  ·  DELIVERY PENDING",
+        );
+      }
       world.delivery.visible = current.outcome === "alternate";
       if (previousOutcome !== current.outcome) {
         previousOutcome = current.outcome;

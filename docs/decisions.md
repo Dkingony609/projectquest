@@ -14,13 +14,13 @@ The decisions here adapt the [GDD](design/ProjectQuest_Comprehensive_Game_Design
 
 ## ADR 002 — One deep construction internship slice
 
-**Status:** Accepted.
+**Status:** Accepted; extended to a second linked construction chapter by ADR 009.
 
 **Context:** The request describes six sectors and full executive progression, while the GDD separates long-term scope from a one-mission vertical slice and two-sector MVP.
 
 **Decision:** Implement `CONST-I01`, “The Missing Materials,” first. Construction is playable; software is visible as future content. Any additional industry cards explicitly identify planned packs. Reuse one domain engine and industry-pack contract; do not create separate sector applications.
 
-**Consequence:** The slice demonstrates the complete learning loop without claiming six playable careers. Software and the four other sectors require distinct, reviewed stories and mechanics. Career starts as intern; successful Day 1 unlocks practice or the next development step rather than granting a promotion.
+**Consequence:** The first slice demonstrates the complete learning loop without claiming six playable careers. Day 2 now provides a distinct planning task on the same project. Software and the four other sectors require their own reviewed stories and mechanics. Career starts as intern; completing either chapter provides evidence and practice without granting a promotion.
 
 ## ADR 003 — Deterministic code controls facts and consequences
 
@@ -52,7 +52,7 @@ The decisions here adapt the [GDD](design/ProjectQuest_Comprehensive_Game_Design
 
 **Decision:** Build a visually coherent compact hub, props and characters from procedural geometry authored in this repository. Avoid imported assets without explicit licensing/provenance.
 
-**Consequence:** The first build can demonstrate real movement, proximity interaction and state-driven feedback. Bespoke character models/rigs, rich animation, textures, environment packs, sound, music and VFX remain outstanding. Procedural assets are intentionally interim art; passing a build does not establish the GDD's eventual production-art quality or hardware performance.
+**Consequence:** The first build demonstrates movement, proximity interaction and state-driven feedback. Original project-authored music/effects and self-hosted licensed typography are now bundled. Bespoke character models/rigs, rich animation, textures, environment packs, expanded audio and VFX remain production work. Procedural geometry is interim art; passing a build does not establish the GDD's eventual production-art quality or hardware performance.
 
 ## ADR 007 — Accessible tools supplement physical discovery
 
@@ -69,3 +69,31 @@ The decisions here adapt the [GDD](design/ProjectQuest_Comprehensive_Game_Design
 **Decision:** A presentation checkpoint moves the avatar to a validated accessible destination without recreating the WebGL scene. An open tool/dialog renders its backdrop once and suspends repeated GPU draws until the relevant visual state or size changes. Project commands and UI input continue normally; project time remains deliberate. The rear office facade cuts away on the site side to keep the player and source characters visible.
 
 **Consequence:** Accessible source visits avoid repeated shader compilation and resource creation, while semantic tools remain responsive on software graphics. The browser acceptance run that originally timed out is preserved as a diagnosed failure, followed by reruns after this correction. This optimisation does not establish representative-device FPS.
+
+## ADR 009 — A second chapter teaches dependency planning through a working tool
+
+**Status:** Accepted.
+
+**Context:** The GDD names “The Slipping Milestone” as the next assignment: a minor-looking activity blocks two successors. Repeating the Day 1 delivery form would not demonstrate a new planning skill.
+
+**Decision:** Add `CONST-I02` to the same construction campaign. Use four editable task durations and labelled predecessor checkboxes, backed by a pure finish-to-start scheduler. A setting-out survey gates inspection and off-site formwork; both gate the pour. Recalculate task timings and the working forecast from the graph. Carry Day 1 costs, trust, forecast, relationships and career evidence into Day 2. Require schedule/Sam/Taylor provenance, Sam's 11:00 follow-up and Alex's review; Morgan remains optional.
+
+**Consequence:** The learner works with a dependency model and sees why the longer parallel branch controls the milestone. Waiting and requesting a second survey team have distinct schedule/cost effects. The approved baseline cannot be silently changed, no unsafe bypass is executed, and added spending occurs only after approval and checks. Durations and credits remain authored teaching assumptions, not construction estimates. Day 3 and further promotion are still planned.
+
+## ADR 010 — Preserve committed decisions and historically valid saves
+
+**Status:** Accepted.
+
+**Decision:** Commit an NPC answer, response card and mentor answer when chosen, using canonical journal/state records. Disabled alternatives remain unavailable across panel reopening and reload. A documented follow-up recovers evidence after pressure while retaining the original choice and relationship cost. Scope conversation commitments to the current chapter so the same colleague can be interviewed in Day 2.
+
+New saves use envelope schema 2 while retaining the existing localStorage key. Accept original schema-1 progress only after replay with its historical conversation semantics and full canonical-snapshot comparison, preserving its assessment and consequences. Retain the legacy journal prefix when re-saving and continuing under the new protocol; new decisions use the committed-choice rules. The prefix boundary is identified by new `followUp`/`chooseRecommendation` actions, with the remaining Day 1 rules unchanged; this release does not bundle a separate historical engine.
+
+**Consequence:** Closing a panel cannot reset a consequential choice, and migration cannot regrade a previously completed assignment under changed rules. Historical dual-answer journals and tampered legacy snapshots require fixture coverage. Day 2 replay restores the actual Day 1 checkpoint and replaces Day 2 practice outcomes without stacking XP; new-career confirmation still protects the current browser save.
+
+## ADR 011 — Self-host the original score and licensed typography
+
+**Status:** Accepted.
+
+**Decision:** Bundle the original “First Light at Riverside” instrumental score and authored effects, plus Manrope and DM Serif Display WOFF2 fonts with licence notices. Start audio only after a user gesture, persist independent music/effects preferences, suspend hidden-tab audio and provide visible feedback for meaningful cues.
+
+**Consequence:** Gameplay needs no streaming, font service or audio-generation dependency. Audio remains optional. Python, NumPy and ffmpeg are score-authoring tools rather than application prerequisites. The bundled composition and signal/browser checks do not replace listening review or the broader production asset roadmap; provenance is recorded in `src/audio/README.md` and `public/fonts/README.md`.

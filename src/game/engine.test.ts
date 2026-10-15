@@ -7,6 +7,7 @@ import {
   getObjectives,
   getRecommendationChoice,
   getRecommendationError,
+  replayMission,
 } from "./engine";
 import { getPack } from "./content";
 import type { Command } from "./types";
@@ -393,7 +394,11 @@ describe("CONST-I01 canonical command engine", () => {
     expect(state.proposal?.approval).toBe("rejected");
     expect(state.career.competencies.authority).toBe(0);
     expect(state.career.competencies.followUp).toBe(2);
-    expect(getFeedback(state)?.next).toContain("Replay");
+    expect(getFeedback(state)?.next).toContain("The Slipping Milestone");
+    const practice = replayMission(state);
+    expect(practice.phase).toBe("arrival");
+    expect(practice.career.xp).toBe(0);
+    expect(practice.profile).toEqual(state.profile);
   });
   it("does not approve an issue that knowingly misstates the supplier estimate as guaranteed", () => {
     let state = investigate();

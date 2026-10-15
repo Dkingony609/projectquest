@@ -6,11 +6,13 @@ The source of truth is the supplied [Game Design Document](docs/design/ProjectQu
 
 ## Current milestone
 
-The implementation contains a complete engineering slice of **The Missing Materials** (`CONST-I01`), the first construction internship assignment. Create your character, enter a navigable 3D office/site, meet Alex, inspect the schedule, interview colleagues, update the delivery card and issue log, and recommend a response. The 10:30 checkpoint applies project consequences; a four-part, source-cited debrief and local save preserve your progress.
+The construction internship has two playable chapters. In **The Missing Materials** (`CONST-I01`), create your character, enter the 3D office/site, gather delivery evidence, update the task and issue records, and take a recommendation through the 10:30 checkpoint. Continue directly into **The Slipping Milestone** (`CONST-I02`) with the same profile, project consequences and career evidence.
 
-Construction is the only playable industry. Software and the other four sectors are labelled future content. Five-day campaigns, promotions beyond intern, and the full career simulation remain on the [roadmap](docs/roadmap.md). Bespoke production art/audio, human learner playtests, subject-matter review, and representative-hardware benchmarks remain outstanding.
+Day 2 uses a working scheduling tool: edit four task durations and predecessor links, trace a survey that blocks two activities, and recalculate the foundation forecast. Sam supplies the verified duration, Taylor confirms acceptance gates, and Alex reviews the recommendation before the deliberate 11:00 checkpoint. Both chapters end with causal, source-cited feedback and saved case studies.
 
-Both implementation milestones are pushed to `feat/projectquest-browser`: `e814373` is the 3D foundation and `5c1836a` is the integrated first-day chapter. The remote branch was checked against the full local commit SHA after pushing. Local validation passed 39 unit/integration tests, six Chromium acceptance tests, lint and the production build. Earlier HTTP 403 push denials are resolved. See [verification](docs/verification.md) for scope and evidence. The development branch has not been merged into `main`.
+Construction is the only playable industry. Software and the other four sectors remain future content. Day 3, **The Stakeholder Check-in**, the remainder of the first week, promotions beyond intern and the full career simulation remain on the [roadmap](docs/roadmap.md). Production character/environment assets, learner playtests, subject-matter review and representative-hardware benchmarks are still outstanding. Original music and self-hosted fonts are included.
+
+Development is on `feat/projectquest-browser`; `main` has not been merged and no public deployment is implied. See [verification](docs/verification.md) for completed validation runs and checked remote commits. Test counts belong to the recorded run, not to this feature summary.
 
 ## Install and run
 
@@ -45,22 +47,26 @@ The game is on `feat/projectquest-browser`; `main` remains unchanged until a sep
 
 ## Play
 
-| Control                               | Action                                                               |
-| ------------------------------------- | -------------------------------------------------------------------- |
-| WASD / arrow keys                     | Walk with collision                                                  |
-| Drag the world                        | Orbit the third-person camera                                        |
-| Click ground / a labelled world route | Walk along a path around obstacles                                   |
-| E / contextual interaction button     | Interact with a nearby colleague or station                          |
-| T                                     | Open the portable project tablet: tasks, schedule and issue register |
-| J                                     | Open the mission journal                                             |
-| Escape                                | Close a panel, or open settings from the workplace                   |
-| Tab / Shift+Tab                       | Navigate semantic interface controls                                 |
+| Control                               | Action                                                      |
+| ------------------------------------- | ----------------------------------------------------------- |
+| WASD / arrow keys                     | Walk with collision                                         |
+| Drag the world                        | Orbit the third-person camera                               |
+| Click ground / a labelled world route | Walk along a path around obstacles                          |
+| E / contextual interaction button     | Interact with a nearby colleague or station                 |
+| T                                     | Open the portable project tablet for the current assignment |
+| J                                     | Open the mission journal                                    |
+| Escape                                | Close a panel, or open settings from the workplace          |
+| Tab / Shift+Tab                       | Navigate semantic interface controls                        |
 
 Accessible navigation offers labelled routes beside the same 3D sources. A graphics-failure route also permits investigation and tools without WebGL. Reduced motion, high contrast, larger text and lower graphics cost are available in settings. These controls support the learning loop; formal assistive-technology validation is still required.
 
-Project time advances only when you choose the checkpoint. Read the schedule, speak with Sam and Morgan, and record their evidence before reporting. Taylor provides optional acceptance-check detail. Waiting with a contingency and requesting an approved alternate are legitimate responses with different costs and forecasts. Unsupported promises and attempts to order beyond your authority have recoverable consequences. Replay starts a fresh practice run, including XP; one mission does not grant a promotion.
+Project time advances only when you choose a checkpoint. Day 1 requires schedule, Sam and Morgan evidence; Taylor adds acceptance-check detail. Day 2 requires the schedule, Sam and Taylor; Morgan provides optional capacity context. Waiting and requesting approved recovery support are legitimate responses with different cost/forecast effects. Unsupported promises and attempts to bypass approval or acceptance gates have recorded consequences.
 
-Progress saves in this browser's localStorage. It is not a cloud backup and does not transfer across devices/origins. The main menu can resume valid progress; starting a new career replaces the current save after confirmation. Storage failures and incompatible/corrupt saves show a recovery message.
+Conversation answers, response cards and mentor-review answers commit when chosen. Their alternatives remain greyed out after closing or reloading. A separate documented follow-up can recover missing evidence while retaining the original relationship consequence. Working records remain editable during investigation.
+
+Continue to Day 2 from the Day 1 debrief. Day 1 replay starts a fresh career practice run. Day 2 replay restores your actual Day 1 checkpoint and replaces the Day 2 result; rewards do not stack. Your role remains Junior PM Intern.
+
+Progress saves in this browser's localStorage. It is not a cloud backup and does not transfer across devices/origins. The main menu resumes validated progress; starting a new career replaces the current save after confirmation. The save envelope is version 2, with compatibility for verified original version 1 saves. Storage failures and incompatible/corrupt saves show a recovery message.
 
 ## Checks and production build
 
@@ -84,11 +90,10 @@ If Chromium is already installed, skip its download and use `CHROMIUM_PATH=/usr/
 - [Testing](docs/testing.md): automated checks and human playtest gates.
 - [Decision log](docs/decisions.md): technology, scope, art and accessibility decisions.
 
-Original temporary procedural geometry is used for the current workplace. Bespoke characters, environment assets and audio remain production work. This game teaches general skills; it does not award professional accreditation.
-
+Original temporary procedural geometry is used for the current workplace. Bespoke characters, richer environment assets, animation and a broader reviewed audio library remain production work. This game teaches general skills; it does not award professional accreditation.
 
 ## Sound, typography and committed decisions
 
 An original 78 BPM, 32-bar instrumental score (piano, pad, bass and brushed percussion) starts after your first interaction. Settings provide independent music/effects volume and mute; hidden tabs suspend audio. All relevant sound cues also have visible feedback. Audio and the new Manrope/DM Serif Display fonts are self-hosted with no external runtime service. Font licences are in `public/fonts`; the original score recipe is in `src/audio`.
 
-Conversation answers and recommendation responses are now committed immediately: alternatives grey out and remain locked after reopening a panel or reloading. A pressured conversation can be recovered through a separate documented follow-up, preserving the original relationship cost. Evidence fields remain correctable before final submission; this does not change the committed response. Legacy saves retain their prior state and can continue.
+The original composition and sound effects accompany both chapters. Audio starts after a user gesture and remains optional; every relevant cue has visible feedback. Legacy progress retains its recorded consequences when it is migrated and continued.

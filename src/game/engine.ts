@@ -1,4 +1,11 @@
 import { getPack } from "./content";
+import {
+  applyDay2Command,
+  beginDay2,
+  day2ConversationChoice,
+  getDay2Feedback,
+  getDay2Objectives,
+} from "./day2";
 import { commandError, isCommand, isProfile } from "./validation";
 import type {
   Command,
@@ -42,6 +49,8 @@ export function getConversationChoice(
   state: GameState,
   npc: NpcId,
 ): "facts" | "pressure" | null {
+  if (state.missionId === "CONST-I02")
+    return day2ConversationChoice(state, npc);
   const first = state.journal.find(
     (item) => item.type === "ask" && item.npc === npc,
   );
@@ -196,6 +205,34 @@ export function applyCommand(
   return reduceCommand(state, command, false);
 }
 
+/** A fresh Day 2 practice run restores the actual Day 1 checkpoint; rewards never stack. */
+export function replayMission(state: GameState): GameState {
+  if (state.missionId !== "CONST-I02") return createGame(state.profile);
+  const transition = state.journal.findIndex(
+    (command) => command.type === "startNextMission",
+  );
+  if (transition < 0)
+    throw new Error("The Day 1 checkpoint is missing from this campaign.");
+  let restored = createGame(state.profile);
+  const firm = state.journal.findIndex(
+    (command) =>
+      command.type === "followUp" || command.type === "chooseRecommendation",
+  );
+  for (let index = 0; index < transition; index++) {
+    const result = replaySavedCommand(
+      restored,
+      state.journal[index],
+      firm < 0 || index < firm,
+    );
+    if (result.error)
+      throw new Error("The earlier checkpoint cannot be replayed.");
+    restored = result.state;
+  }
+  const restarted = beginDay2(restored);
+  if (restarted.error) throw new Error(restarted.error);
+  return restarted.state;
+}
+
 /** @internal Replay pre-commitment schema-1 conversations without changing their saved consequences. */
 export function replaySavedCommand(
   state: GameState,
@@ -211,6 +248,19 @@ function reduceCommand(
   legacyConversations: boolean,
 ): CommandResult {
   if (!isCommand(command)) return fail(state, commandError(command));
+  if (command.type === "startNextMission") return beginDay2(state);
+  if (state.missionId === "CONST-I02") return applyDay2Command(state, command);
+  if (
+    [
+      "saveSchedulePlan",
+      "chooseScheduleRecommendation",
+      "submitScheduleRecommendation",
+    ].includes(command.type)
+  )
+    return fail(
+      state,
+      "The dependency planning tools unlock in Day 2 after completing your first assignment.",
+    );
   if (state.phase === "debrief")
     return unchanged(
       state,
@@ -690,6 +740,7 @@ function scoreRubric(state: GameState): Scores {
 }
 
 export function getObjectives(state: GameState): Objective[] {
+  if (state.missionId === "CONST-I02") return getDay2Objectives(state);
   return [
     {
       id: "brief",
@@ -740,6 +791,7 @@ export function getObjectives(state: GameState): Objective[] {
 }
 
 export function getFeedback(state: GameState): Feedback | null {
+  if (state.missionId === "CONST-I02") return getDay2Feedback(state);
   if (state.phase !== "debrief") return null;
   const scores = state.career.competencies;
   const cite = (...types: string[]) =>
@@ -835,7 +887,7 @@ export function getFeedback(state: GameState): Feedback | null {
     xpEarned: state.career.xp,
     reflection:
       "What could you truthfully tell the sponsor before the checkpoint? Which trade-off would change your recommendation?",
-    next: "Replay to compare another approach. Day 2 is planned; this assignment records internship evidence and does not grant a promotion.",
+    next: "Continue to Day 2: The Slipping Milestone. This assignment records internship evidence and does not grant a promotion.",
     governancePassed: state.project.governance === "compliant",
   };
 }

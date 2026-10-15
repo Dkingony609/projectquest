@@ -7,7 +7,7 @@ const FORMAT = "projectquest.save";
 const MAX_SAVE_LENGTH = 1_000_000;
 
 export function serializeSave(state: GameState): string {
-  return JSON.stringify({ format: FORMAT, schemaVersion: 1, snapshot: state });
+  return JSON.stringify({ format: FORMAT, schemaVersion: 2, snapshot: state });
 }
 
 function validPosition(value: unknown): value is Position {
@@ -58,7 +58,7 @@ export function parseSave(input: string): {
   }
   if (!isRecord(parsed) || parsed.format !== FORMAT)
     return { state: null, error: "This is not a ProjectQuest save file." };
-  if (parsed.schemaVersion !== 1)
+  if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2)
     return {
       state: null,
       error:
@@ -68,7 +68,7 @@ export function parseSave(input: string): {
   if (
     !isRecord(snapshot) ||
     snapshot.version !== 1 ||
-    snapshot.missionId !== "CONST-I01"
+    !["CONST-I01", "CONST-I02"].includes(String(snapshot.missionId))
   )
     return {
       state: null,
@@ -76,7 +76,7 @@ export function parseSave(input: string): {
     };
   if (!isProfile(snapshot.profile) || !validPosition(snapshot.position))
     return { state: null, error: "The player profile or position is invalid." };
-  if (!Array.isArray(snapshot.journal) || snapshot.journal.length > 300)
+  if (!Array.isArray(snapshot.journal) || snapshot.journal.length > 600)
     return {
       state: null,
       error: "The action journal is missing or too large.",

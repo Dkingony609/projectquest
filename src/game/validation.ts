@@ -72,7 +72,47 @@ export function isCommand(value: unknown): value is Command {
   switch (value.type) {
     case "brief":
     case "advanceTime":
+    case "startNextMission":
       return true;
+    case "saveSchedulePlan":
+      return (
+        Array.isArray(value.tasks) &&
+        value.tasks.length === 4 &&
+        value.tasks.every(
+          (task) =>
+            isRecord(task) &&
+            text(task.id, 1, 40) &&
+            typeof task.durationDays === "number" &&
+            Number.isInteger(task.durationDays) &&
+            task.durationDays >= 1 &&
+            task.durationDays <= 60 &&
+            Array.isArray(task.dependencies) &&
+            task.dependencies.length <= 4 &&
+            task.dependencies.every((id) => text(id, 1, 40)),
+        ) &&
+        oneOf(value.owner, owners) &&
+        value.checkpoint === "11:00" &&
+        sources(value.evidence)
+      );
+    case "chooseScheduleRecommendation":
+      return oneOf(value.option, [
+        "wait",
+        "extra_team",
+        "bypass",
+        "original_date",
+      ]);
+    case "submitScheduleRecommendation":
+      return (
+        oneOf(value.option, [
+          "wait",
+          "extra_team",
+          "bypass",
+          "original_date",
+        ]) &&
+        oneOf(value.confidence, ["estimate", "guaranteed"]) &&
+        value.nextCheck === "11:00" &&
+        isComparison(value.comparison)
+      );
     case "inspect":
       return oneOf(value.source, sourceIds);
     case "ask":
@@ -116,6 +156,15 @@ export function isCommand(value: unknown): value is Command {
   }
 }
 export function commandError(value: unknown): string {
+  if (
+    isRecord(value) &&
+    (value.type === "saveSchedulePlan" ||
+      value.type === "submitScheduleRecommendation")
+  ) {
+    if (value.type === "saveSchedulePlan")
+      return "Record four valid work packages with whole-day durations, distinct source evidence, a known owner and the 11:00 checkpoint.";
+    return "Complete the schedule response: confidence, 11:00 checkpoint, both forecast days (1–30) and both extra costs (0–100,000 credits).";
+  }
   if (isRecord(value) && value.type === "logIssue" && isRecord(value.issue)) {
     const issue = value.issue;
     if (!text(issue.title, 5, 160))
