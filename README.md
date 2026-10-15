@@ -6,11 +6,11 @@ The source of truth is the supplied [Game Design Document](docs/design/ProjectQu
 
 ## Current milestone
 
-The local implementation contains a complete engineering slice of **The Missing Materials** (`CONST-I01`), the first construction internship assignment. Create your character, enter a navigable 3D office/site, meet Alex, inspect the schedule, interview colleagues, update the delivery card and issue log, and recommend a response. The 10:30 checkpoint applies project consequences; a four-part, source-cited debrief and local save preserve your progress.
+The implementation contains a complete engineering slice of **The Missing Materials** (`CONST-I01`), the first construction internship assignment. Create your character, enter a navigable 3D office/site, meet Alex, inspect the schedule, interview colleagues, update the delivery card and issue log, and recommend a response. The 10:30 checkpoint applies project consequences; a four-part, source-cited debrief and local save preserve your progress.
 
 Construction is the only playable industry. Software and the other four sectors are labelled future content. Five-day campaigns, promotions beyond intern, and the full career simulation remain on the [roadmap](docs/roadmap.md). Bespoke production art/audio, human learner playtests, subject-matter review, and representative-hardware benchmarks remain outstanding.
 
-Milestone 01 is committed locally as `e814373` on `feat/projectquest-browser`. Milestone 02 is implemented and validated locally: 39 unit/integration tests, six Chromium acceptance tests, lint and the production build pass. **GitHub delivery is blocked:** pushes returned HTTP 403, including after the connection recheck. These changes are not confirmed on the remote. See [verification](docs/verification.md) for the latest checks and delivery status.
+Both implementation milestones are pushed to `feat/projectquest-browser`: `e814373` is the 3D foundation and `5c1836a` is the integrated first-day chapter. The remote branch was checked against the full local commit SHA after pushing. Local validation passed 39 unit/integration tests, six Chromium acceptance tests, lint and the production build. Earlier HTTP 403 push denials are resolved. See [verification](docs/verification.md) for scope and evidence. The development branch has not been merged into `main`.
 
 ## Install and run
 
@@ -32,7 +32,16 @@ npm's cache can be kept in the writable workspace:
 npm --cache /workspace/.cache/projectquest-npm ci
 ```
 
-For another machine, the canonical repository is `https://github.com/Dkingony609/projectquest.git`. Once write access is restored and this branch has been pushed and verified, clone it and switch to `feat/projectquest-browser` before installing. Until then, cloning the remote will not necessarily include this implementation; preserve the local checkout.
+For another machine, clone the development branch from the canonical repository:
+
+```bash
+git clone --branch feat/projectquest-browser https://github.com/Dkingony609/projectquest.git
+cd projectquest
+npm ci
+npm run dev
+```
+
+The game is on `feat/projectquest-browser`; `main` remains unchanged until a separate merge.
 
 ## Play
 

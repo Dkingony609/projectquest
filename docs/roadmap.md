@@ -4,9 +4,9 @@ The [GDD](design/ProjectQuest_Comprehensive_Game_Design_Document.docx) targets a
 
 ## Current local status
 
-M1's browser foundation is implemented, validated and committed locally as `e814373` on `feat/projectquest-browser`. M2's integrated construction Day 1 engineering slice is implemented locally. Its 24 game/save tests and 15 world tests (10 pathfinding, five collision) pass; all six Chromium acceptance tests now pass, along with lint and the production build. [verification.md](verification.md) records final run results and commit status.
+M1's browser foundation (`e814373`) and M2's integrated construction Day 1 engineering slice (`5c1836a`) are implemented, validated and pushed to `feat/projectquest-browser`. Its 24 game/save tests and 15 world tests (10 pathfinding, five collision) pass; all six Chromium acceptance tests now pass, along with lint and the production build. [verification.md](verification.md) records final run results and commit status.
 
-GitHub pushes returned HTTP 403 before and after a connection recheck. Neither milestone is claimed as remotely delivered. Restore write access, push the preserved development branch and verify its remote commit to clear this delivery gate. Human learner/SME validation, representative-device benchmarking, broader accessibility evaluation, and full-game expansion remain future work.
+Earlier GitHub pushes returned HTTP 403. A later push succeeded and the remote branch matched the full local implementation commit SHA, clearing the delivery gate. The branch remains separate from `main`; no merge or deployment is claimed. Human learner/SME validation, representative-device benchmarking, broader accessibility evaluation, and full-game expansion remain future work.
 
 ## Milestones and exit gates
 
