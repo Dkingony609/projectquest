@@ -107,3 +107,7 @@ No analytics, cloud sync, enterprise reporting, multiplayer, or AI dialogue is n
 ## Human rendering boundary
 
 `src/world/humans.ts` loads and validates the bundled glTF humans. Each actor receives a private cloned skeleton, materials and animation mixer while sharing geometry/textures. `WorldCanvas` preserves gameplay transforms, collision and target IDs; it drives crossfaded Idle/Walk clips from actual travelled distance. Resource ownership and retries are explicit. `CharacterPreview` uses the same factory for editable body/appearance previews. The optional appearance body field preserves original saves without changing their canonical state. See [characters.md](characters.md) for the wardrobe, asset pipeline and disposal contract.
+
+## Physical project tools
+
+`Dialog` supplies optional tablet and journal presentations while retaining a single semantic modal and keyboard boundary. Device chrome is separate from the existing form logic: the tablet screen scrolls independently of its header/home control, and its clock shows canonical game time. `MissionJournal` presents both chapters through one paginated notebook renderer. Its source records, objective status and event summaries are projections of `GameState`; page navigation is local presentation state and emits no project commands. Shared book sections support evidence and activity pagination without discarding records. Fonts and surface textures are local CSS/assets rather than external runtime services.

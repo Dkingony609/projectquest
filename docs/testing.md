@@ -102,3 +102,7 @@ Record current commands, counts, failures and verified remote commits in [verifi
 ## Human character regression checks
 
 `src/world/humans.test.ts` checks independent skeletons/materials, animation blending, actual bundled GLB structure, cancellation and disposal. Save fixtures cover both body types and absent legacy body values. `tests/characters.spec.ts` exercises the real preview, face/hand/full-body captures, material customisation and reload, five independent world rigs, actual walking/collision, orbit/zoom, NPC dialogue and failed-model retry with accessible gameplay. Run alongside the existing audio, foundation and complete Day 1/Day 2 acceptance tests with one browser worker. Browser screenshots and software rendering verify integration; they do not establish minimum hardware FPS or final production-art quality.
+
+## Tablet and notebook presentation
+
+`tests/devices.spec.ts` exercises the tablet's real schedule inspection, keyboard tabs and home control, then turns notebook pages and reads canonical objectives, source provenance and logged activity. It also edits and saves a real Day 2 dependency plan at 390px with high contrast/larger text, checks that the book stays within the viewport and confirms that reading it does not mutate the project journal. Capture both devices on desktop and portrait, load the actual local handwriting fonts, and retain the existing complete mission/focus/character regressions. The read-only Day 2 focus-wrap check includes the new physical home control.

@@ -415,7 +415,7 @@ test("read-only Day 2 planning fits portrait and keeps keyboard focus on availab
   const close = page.getByRole("button", { name: "Close panel", exact: true });
   await close.focus();
   await page.keyboard.press("Shift+Tab");
-  await expect(page.getByRole("tabpanel")).toBeFocused();
+  await expect(page.getByRole("button", { name: "Put tablet away" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   await planTab.focus();

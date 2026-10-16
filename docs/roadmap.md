@@ -67,3 +67,7 @@ The repository's checks and commit history are the evidence of delivered enginee
 ## Character upgrade extension (v0.3.0)
 
 Delivered foundation: two real anatomical body builds, textured skin/eyes/hair/clothing, finger geometry, independent game rigs and blended idle/walk motion for player/NPCs; 3D appearance preview, optional persisted body choice, reusable workplace wardrobes, bounded loading/retry and explicit resource disposal. Runtime movement, camera, interaction targets and both construction chapters are preserved. Broader identity art, facial/lip animation and measured device budgets remain later production work. See [characters.md](characters.md) and [verification.md](verification.md).
+
+## Physical tool presentation (v0.3.1)
+
+The shared tablet shell and paginated, handwritten field notebook now support both construction chapters, including real tool edits, canonical evidence/activity, keyboard controls and portrait accessibility settings. This extends the existing UI milestone; the next gameplay chapter remains Day 3, “The Stakeholder Check-in.” See [tools.md](tools.md) and [verification.md](verification.md).

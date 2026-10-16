@@ -91,3 +91,23 @@ An earlier browser attempt overlapped two test runners and lost an audio trace a
 **GitHub:** Development branch `feat/projectquest-browser`; this milestone is recorded by its implementation commit. Its full SHA is checked against the remote after pushing. `main` is not merged and no deployment is implied. The source bundle and playable static archive are regenerated from the delivered revision.
 
 **Next:** Construction Day 3, “The Stakeholder Check-in,” followed by reviewed content and broader character identities according to the roadmap.
+
+## Physical project tools — tablet and handwritten notebook (v0.3.1)
+
+**Implemented:** Added a reusable tablet presentation with device bezel/camera, actual project time, fixed header, independently scrolling screen and working physical home control. Existing Day 1 tasks/schedule/issues and Day 2 dependency-plan forms retain their actual commands and validation. Replaced duplicate chapter journals with one canonical-state notebook: ruled paper, bound spread/spine/page edges, locally bundled Kalam handwriting, live objectives, complete evidence/provenance and paginated activity. Previous/Next and Assignment/Evidence/Activity bookmarks work without changing project state. Page controls remain visible while reading; portrait, high contrast, larger text, Escape and focus restoration are supported. Font sources and SIL OFL are bundled.
+
+**Verified locally:**
+
+- `npm run build` passed, including TypeScript; no chunk-size warning.
+- `npm run lint` passed.
+- `npm test`: all 99 unit/integration checks across eight files passed.
+- `CHROMIUM_PATH=/usr/bin/chromium npx playwright test --workers=1`: all 17 browser tests passed in one completed 7.8-minute run. All fifteen prior audio, character, movement and complete Day 1/Day 2 regression cases passed.
+- The two new device cases exercised actual schedule inspection, keyboard tabs, the physical home control/focus restoration, live objective/evidence/activity records, Previous/Next and section navigation, both real Kalam font weights, and unchanged state after reading. At 390px with high contrast/larger text, the learner gathered verified sources, edited/saved a real Day 2 plan and read the resulting journal. Both outer and inner screen widths were checked for horizontal overflow.
+- Desktop and portrait device screenshots were visually inspected and preserved in [tools.md](tools.md). The first targeted portrait check exposed intrinsic-width overflow; responsive summary columns, field sizing and device margins were corrected before the complete passing run. That failed attempt is not counted as a pass.
+- The v0.3.1 static archive was rebuilt and checked for CRC integrity, both handwriting fonts/licence and matching model checksums.
+
+**Limits:** These are UI presentation and navigation improvements to the existing two construction chapters. The notebook projects verified actions/evidence; it does not award progress for reading or turning pages. Software-rendered Chromium checks do not establish a representative-device FPS minimum or formal assistive-technology certification. No public deployment or remote CI result is claimed.
+
+**GitHub:** Branch `feat/projectquest-browser`; this milestone's commit is pushed and its SHA checked against the remote before reporting delivery. `main` is not merged. The downloadable static archive and source bundle are refreshed.
+
+**Next:** Construction Day 3, “The Stakeholder Check-in,” remains the next gameplay milestone.

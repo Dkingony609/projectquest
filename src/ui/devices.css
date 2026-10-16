@@ -1,0 +1,291 @@
+/* Physical tool shells. Simulation forms stay inside the same keyboard dialog. */
+.modal-backdrop.pq-backdrop-tablet,
+.modal-backdrop.pq-backdrop-journal {
+  background: radial-gradient(ellipse at 50% 35%, #173d3c75, #10262dd6);
+}
+.pq-panel.pq-dialog-tablet,
+.pq-panel.pq-dialog-journal {
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  height: min(850px, calc(100dvh - 48px));
+  min-height: 0;
+  overflow: hidden;
+}
+.pq-panel.pq-dialog-tablet {
+  padding: 0 14px;
+  border: 2px solid #64706e;
+  border-radius: 38px;
+  background: linear-gradient(125deg, #424a4b, #1d2527 18%, #151d20 80%, #3e484b);
+  box-shadow: 0 3px 0 #a6b1ad inset, 0 -3px 0 #060e11 inset,
+    0 0 0 2px #10191d, 0 35px 80px #061c24a6;
+}
+.pq-tablet-hardware {
+  height: 25px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.pq-tablet-camera {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #10181a;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #779699, #0e252e 65%);
+  box-shadow: 0 0 0 1px #434e51;
+}
+.pq-dialog-tablet > .pq-dialog-surface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid #081416;
+  border-radius: 18px;
+  background: #f6f8f4;
+  box-shadow: 0 1px 2px #0008;
+}
+.pq-tablet-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 25px;
+  background: #183e3e;
+  color: #f5f6ea;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 1px;
+}
+.pq-tablet-status > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.pq-tablet-status > span:last-child {
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.pq-tablet-mark {
+  color: #e4bc73;
+  font-size: 12px;
+  letter-spacing: -1px;
+}
+.pq-dialog-tablet .pq-panel-heading {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 21px 27px 18px;
+  background: #fffef8;
+  border-bottom: 1px solid #d9e3da;
+}
+.pq-dialog-tablet .pq-panel-heading h2 {
+  font-size: clamp(21px, 2.5vw, 29px);
+}
+.pq-dialog-tablet .pq-panel-heading .eyebrow {
+  font-size: 9px;
+  line-height: 1.5;
+}
+.pq-dialog-tablet .pq-dialog-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #93a99d #edf1e9;
+  padding: 0 27px 25px;
+  background-image: radial-gradient(#2f685708 0.7px, transparent 0.7px);
+  background-size: 8px 8px;
+}
+.pq-dialog-tablet .pq-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -1px 20px;
+  padding: 17px 0 12px;
+  background: #f6f8f4;
+  border-bottom: 1px solid #dce5dc;
+}
+.pq-dialog-tablet [role="tabpanel"] {
+  min-width: 0;
+  scroll-margin-top: 80px;
+}
+.pq-dialog-tablet .pq-schedule-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.pq-dialog-tablet .pq-stat,
+.pq-dialog-tablet fieldset {
+  min-width: 0;
+}
+.pq-tablet-bezel {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  align-items: center;
+  min-height: 51px;
+  flex-shrink: 0;
+  padding: 2px 18px;
+  color: #a4b2ad;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 2px;
+}
+.pq-tablet-bezel > span:last-child {
+  text-align: right;
+}
+.pq-tablet-home {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #64716d;
+  background: linear-gradient(145deg, #323e3e, #141e22);
+  box-shadow: 0 1px 1px #0008 inset, 0 1px 1px #ffffff12;
+}
+.pq-tablet-home > span {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid #c4cec3;
+  border-radius: 3px;
+}
+.pq-tablet-home:hover {
+  background: #3a514d;
+}
+.pq-panel.pq-dialog-journal {
+  padding: 18px;
+  border: 1px solid #7d8d70;
+  border-radius: 14px 20px 20px 14px;
+  background: #30483e;
+  box-shadow: 0 0 0 4px #1d312b, 0 35px 80px #061c24a6;
+}
+.pq-dialog-journal > .pq-dialog-surface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.pq-dialog-journal .pq-panel-heading {
+  flex-shrink: 0;
+  padding: 5px 10px 16px;
+  margin: 0;
+  border: 0;
+  color: #fff3ce;
+}
+.pq-dialog-journal .pq-panel-heading .eyebrow {
+  color: #e2ce9e;
+}
+.pq-dialog-journal .pq-panel-heading h2 {
+  font-family: "DM Serif Display", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.pq-dialog-journal .pq-close {
+  background: #f9edcc;
+  color: #213e35;
+}
+.pq-dialog-journal .pq-dialog-content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.high-contrast .pq-panel.pq-dialog-tablet {
+  border-color: #dae8d5;
+  background: #172b29;
+}
+.high-contrast .pq-dialog-tablet > .pq-dialog-surface,
+.high-contrast .pq-dialog-tablet .pq-dialog-content,
+.high-contrast .pq-dialog-tablet .pq-tabs {
+  background: #fffef7;
+}
+.high-contrast .pq-panel.pq-dialog-journal {
+  background: #193c2e;
+  border-color: #e1cf8e;
+}
+.high-contrast .pq-dialog-journal .pq-panel-heading .eyebrow {
+  color: #fff0c6;
+}
+@media (max-width: 600px) {
+  .modal-backdrop.pq-backdrop-tablet,
+  .modal-backdrop.pq-backdrop-journal {
+    padding: 12px;
+  }
+  .pq-panel.pq-dialog-tablet,
+  .pq-panel.pq-dialog-journal {
+    height: calc(100dvh - 24px);
+  }
+  .pq-panel.pq-dialog-tablet {
+    padding: 0 8px;
+    border-radius: 27px;
+  }
+  .pq-tablet-hardware {
+    height: 21px;
+  }
+  .pq-dialog-tablet > .pq-dialog-surface {
+    border-radius: 13px;
+  }
+  .pq-tablet-status {
+    padding: 8px 12px;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    gap: 7px;
+  }
+  .pq-tablet-status > span:first-child {
+    gap: 6px;
+  }
+  .pq-dialog-tablet .pq-panel-heading {
+    padding: 16px 14px;
+    gap: 8px;
+  }
+  .pq-dialog-tablet .pq-panel-heading .eyebrow {
+    font-size: 8px;
+  }
+  .pq-dialog-tablet .pq-dialog-content {
+    padding: 0 14px 20px;
+  }
+  .pq-dialog-tablet .pq-tabs {
+    gap: 5px;
+  }
+  .pq-dialog-tablet .pq-tabs button {
+    padding: 10px 8px;
+    font-size: 11px;
+  }
+  .pq-dialog-tablet .pq-schedule-summary {
+    grid-template-columns: 1fr;
+  }
+  .pq-dialog-tablet .pq-table {
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
+  .pq-tablet-bezel {
+    padding: 2px 8px;
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .pq-panel.pq-dialog-journal {
+    padding: 9px;
+  }
+  .pq-dialog-journal .pq-panel-heading {
+    padding: 7px 5px 13px;
+  }
+  .pq-dialog-journal .pq-panel-heading h2 {
+    font-size: 25px;
+  }
+}
+@media (max-height: 500px) and (min-width: 601px) {
+  .pq-panel.pq-dialog-tablet,
+  .pq-panel.pq-dialog-journal {
+    height: calc(100dvh - 24px);
+  }
+  .modal-backdrop.pq-backdrop-tablet,
+  .modal-backdrop.pq-backdrop-journal {
+    padding: 12px;
+  }
+  .pq-dialog-tablet .pq-panel-heading {
+    padding: 10px 20px;
+  }
+}

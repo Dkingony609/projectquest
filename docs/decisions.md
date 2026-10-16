@@ -105,3 +105,11 @@ New saves use envelope schema 2 while retaining the existing localStorage key. A
 **Decision:** Bundle optimised MakeHuman CC0 anatomical meshes, UV textures, game rigs and clothing as two GLBs. Author in-place idle/walk motion, site PPE and clinical variants in an optional Blender/MPFB pipeline. Give each actor an independent skeleton/material instance; share geometry and textures within a scene. Keep movement, collision, dialogue and camera authority in their existing systems. Use the same real assets for the character creator.
 
 **Consequence:** Believable human proportions, faces and fingers replace box geometry without introducing a runtime asset service. GPL authoring code is separate from CC0 graphical assets and is not vendored. Optional saved body type supports old careers unchanged. Broader face/hair identity choices, facial animation and representative-device performance validation remain future work. Sources and exact limitations are in [characters.md](characters.md).
+
+## ADR 013 — Let project tools read as physical objects
+
+**Status:** Accepted.
+
+**Decision:** Present the working tablet tools within a device shell and render the mission journal as a bound, ruled notebook with licensed, self-hosted Kalam handwriting. Reuse the existing Dialog focus boundary, tool forms and deterministic state. Use one shared journal for both chapters, with real Previous/Next and section navigation; paginate source/activity records rather than truncating them. The tablet home control closes the device and returns focus to the workplace.
+
+**Consequence:** Tools feel like objects carried into the workplace while preserving real schedule edits, evidence and persistence. Their semantic DOM controls remain usable without precision camera movement. Handwriting is presentation, not simulated learner input; the notebook records the player's verified actions. No new project authority, rewards, timing rules, backend or font service is introduced. Portrait, larger-text and high-contrast modes require explicit regression checks.

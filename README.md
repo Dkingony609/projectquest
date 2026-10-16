@@ -104,3 +104,11 @@ The original composition and sound effects accompany both chapters. Audio starts
 Both selectable body types and all four NPCs use actual 3D human meshes, textured faces, fingers, clothing and independently animated skeletons. The character creator previews the same assets with full-body, face and hand views. Existing appearances and old saves remain supported. Shared office, site/PPE, clinical, events, manufacturing and energy outfits support future content; construction is still the only playable industry.
 
 Models are bundled locally; no Blender installation or asset service is required to play. The [character guide](docs/characters.md) explains animation, lifecycle, outfits and limits. [Asset notices](public/models/humans/NOTICE.md), CC0 terms and checksums accompany the files; optional [authoring instructions](scripts/characters/README.md) preserve the build recipe.
+
+## Tablet and field notebook (v0.3.1)
+
+Press **T** to open the project tablet: a framed device with an in-game status bar, independently scrolling screen, working tool tabs and a physical home control that puts it away. Existing schedule, task and issue tools still update the same project records; Day 2 retains its editable dependency plan.
+
+Press **J** to open the field notebook. Turn spreads with Previous/Next or jump to Assignment, Evidence and Activity. Ruled paper, a bound spine and locally bundled Kalam handwriting present the same live objectives, verified source records and activity history. Reading or turning pages never changes project decisions or advances time. Keyboard focus, Escape, high contrast, larger text and portrait layouts remain supported.
+
+See the [tool presentation guide](docs/tools.md) for captures, interaction details and implementation boundaries.

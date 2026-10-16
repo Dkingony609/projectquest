@@ -15,6 +15,7 @@ import {
   type SourceId,
 } from "../game";
 import Dialog from "./Dialog";
+import MissionJournal from "./MissionJournal";
 import type { GamePanelProps } from "./GamePanel";
 import "./day2.css";
 
@@ -783,39 +784,6 @@ function Review({ state, dispatch, onClose }: Interaction) {
     </>
   );
 }
-function Journal({ state }: { state: GameState }) {
-  return (
-    <>
-      <p>{DAY2.briefing}</p>
-      <ul className="pq-list">
-        {getObjectives(state).map((o) => (
-          <li className="pq-objective" key={o.id}>
-            <span aria-hidden="true">{o.complete ? "✓" : "○"}</span>
-            {o.label}
-            <span className="sr-only">
-              {o.complete ? "Complete" : "Pending"}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <h3>Today’s sources</h3>
-      {state.evidence.map((id) => (
-        <Source key={id} id={id} />
-      ))}
-      <h3>Day 2 activity</h3>
-      <ol className="pq-list pq-event-list">
-        {state.events
-          .filter((e) => e.day === 2)
-          .map((e) => (
-            <li key={e.seq}>
-              <small>#{e.seq}</small>
-              <span>{e.summary}</span>
-            </li>
-          ))}
-      </ol>
-    </>
-  );
-}
 function Debrief({
   state,
   onClose,
@@ -927,6 +895,10 @@ export default function Day2Panel({
       title={titles[kind] ?? DAY2.title}
       eyebrow={`CONSTRUCTION · DAY 2 · ${DAY2.title.toUpperCase()}`}
       wide={["board", "report", "debrief"].includes(kind)}
+      variant={
+        kind === "board" ? "tablet" : kind === "journal" ? "journal" : "panel"
+      }
+      status={`DAY ${state.day} · ${String(Math.floor(state.minutes / 60)).padStart(2, "0")}:${String(state.minutes % 60).padStart(2, "0")}`}
       onClose={onClose}
     >
       {kind === "mentor" && (
@@ -944,7 +916,7 @@ export default function Day2Panel({
       {kind === "report" && (
         <Recommendation state={state} dispatch={dispatch} onClose={onClose} />
       )}{" "}
-      {kind === "journal" && <Journal state={state} />}{" "}
+      {kind === "journal" && <MissionJournal state={state} />}{" "}
       {kind === "debrief" && (
         <Debrief
           state={state}

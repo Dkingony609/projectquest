@@ -11,6 +11,7 @@ import {
   type SourceId,
 } from "../game/index";
 import Dialog from "./Dialog";
+import MissionJournal from "./MissionJournal";
 import Day2Panel from "./Day2Panel";
 import "./panels.css";
 
@@ -1250,56 +1251,6 @@ function Review({ state, dispatch, onClose }: InteractionProps) {
   );
 }
 
-function Journal({ state }: { state: GameState }) {
-  return (
-    <>
-      <p className="pq-step">Day 01 · {pack.mission.title}</p>
-      <p>{pack.mission.briefing}</p>
-      <h3>Assignment objectives</h3>
-      <ul className="pq-list">
-        {getObjectives(state).map((objective) => (
-          <li
-            key={objective.id}
-            className="pq-objective"
-            data-complete={objective.complete}
-          >
-            <span className="pq-check" aria-hidden="true">
-              {objective.complete ? "✓" : "○"}
-            </span>
-            <span>
-              {objective.label}
-              <span className="sr-only">
-                {" "}
-                · {objective.complete ? "Complete" : "Pending"}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <h3 className="pq-section-heading">Evidence notebook</h3>
-      {state.evidence.length ? (
-        state.evidence.map((source) => (
-          <SourceRecord key={source} source={source} />
-        ))
-      ) : (
-        <div className="pq-empty">
-          Your notebook is empty. Speak with Alex, then inspect the schedule and
-          investigate with your colleagues.
-        </div>
-      )}
-      <h3 className="pq-section-heading">Activity log</h3>
-      <ol className="pq-list pq-event-list">
-        {state.events.map((event) => (
-          <li key={event.seq}>
-            <small>#{String(event.seq).padStart(2, "0")}</small>
-            <span>{event.summary}</span>
-          </li>
-        ))}
-      </ol>
-    </>
-  );
-}
-
 function Career({ state }: { state: GameState }) {
   const roles = [
     "Junior PM Intern",
@@ -1592,6 +1543,10 @@ export function GamePanel({
       title={titles[kind]}
       eyebrow={eyebrows[kind]}
       wide={["board", "report", "career", "debrief"].includes(kind)}
+      variant={
+        kind === "board" ? "tablet" : kind === "journal" ? "journal" : "panel"
+      }
+      status={`DAY ${state.day} · ${String(Math.floor(state.minutes / 60)).padStart(2, "0")}:${String(state.minutes % 60).padStart(2, "0")}`}
       onClose={onClose}
     >
       {kind === "mentor" && (
@@ -1609,7 +1564,7 @@ export function GamePanel({
       {kind === "report" && (
         <Recommendation state={state} dispatch={dispatch} onClose={onClose} />
       )}
-      {kind === "journal" && <Journal state={state} />}
+      {kind === "journal" && <MissionJournal state={state} />}
       {kind === "career" && <Career state={state} />}
       {kind === "debrief" && (
         <Debrief

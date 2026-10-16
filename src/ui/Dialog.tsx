@@ -1,9 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import "./devices.css";
 
 interface DialogProps {
   title: string;
   eyebrow: string;
   wide?: boolean;
+  variant?: "panel" | "tablet" | "journal";
+  status?: string;
   children: ReactNode;
   onClose: () => void;
 }
@@ -13,6 +16,8 @@ export default function Dialog({
   title,
   eyebrow,
   wide = false,
+  variant = "panel",
+  status,
   children,
   onClose,
 }: DialogProps) {
@@ -67,30 +72,62 @@ export default function Dialog({
   }, []);
 
   return (
-    <div className="modal-backdrop pq-backdrop">
+    <div className={`modal-backdrop pq-backdrop pq-backdrop-${variant}`}>
       <section
         ref={panel}
-        className={`panel pq-panel${wide ? " pq-panel-wide" : ""}`}
+        className={`panel pq-panel${wide ? " pq-panel-wide" : ""} pq-dialog-${variant}`}
+        data-presentation={variant}
         role="dialog"
         aria-modal="true"
         aria-labelledby="pq-panel-title"
       >
-        <header className="pq-panel-heading">
-          <div>
-            <p className="eyebrow">{eyebrow}</p>
-            <h2 ref={heading} tabIndex={-1} id="pq-panel-title">
-              {title}
-            </h2>
+        {variant === "tablet" && (
+          <div className="pq-tablet-hardware" aria-hidden="true">
+            <span className="pq-tablet-camera" />
           </div>
-          <button
-            className="pq-close"
-            aria-label="Close panel"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        {children}
+        )}
+        <div className="pq-dialog-surface">
+          {variant === "tablet" && (
+            <div className="pq-tablet-status">
+              <span>
+                <span className="pq-tablet-mark" aria-hidden="true">PQ</span>
+                PROJECT WORKSPACE
+              </span>
+              <span>{status}</span>
+            </div>
+          )}
+          <header className="pq-panel-heading">
+            <div>
+              <p className="eyebrow">{eyebrow}</p>
+              <h2 ref={heading} tabIndex={-1} id="pq-panel-title">
+                {title}
+              </h2>
+            </div>
+            <button
+              className="pq-close"
+              aria-label="Close panel"
+              onClick={onClose}
+            >
+              ×
+            </button>
+          </header>
+          <div className="pq-dialog-content">{children}</div>
+        </div>
+        {variant === "tablet" && (
+          <footer className="pq-tablet-bezel">
+            <span aria-hidden="true">PROJECTQUEST</span>
+            <button
+              className="pq-tablet-home"
+              type="button"
+              aria-label="Put tablet away"
+              title="Put tablet away"
+              onClick={onClose}
+            >
+              <span aria-hidden="true" />
+            </button>
+            <span aria-hidden="true">FIELD EDITION</span>
+          </footer>
+        )}
       </section>
     </div>
   );
