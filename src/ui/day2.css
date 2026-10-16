@@ -1,0 +1,128 @@
+.dependency-diamond {
+  margin: 22px 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+  text-align: center;
+}
+.dependency-diamond strong,
+.dependency-diamond small {
+  display: block;
+}
+.dependency-diamond small {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.diamond-start,
+.diamond-end {
+  padding: 13px 20px;
+  background: #dfece2;
+  border: 1px solid #b0ccba;
+  border-radius: 9px;
+  min-width: 220px;
+}
+.diamond-branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(530px, 100%);
+  gap: 24px;
+}
+.diamond-branches > div {
+  background: #f0eee0;
+  border: 1px solid #d5cdb2;
+  padding: 10px;
+  border-radius: 8px;
+}
+.diamond-branches span,
+.diamond-end > span {
+  display: block;
+  color: var(--teal);
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+.day2-plan fieldset {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+}
+.day2-plan legend {
+  font-size: 16px;
+  font-weight: 750;
+  margin-bottom: 14px;
+}
+.plan-work-package {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+  border: 1px solid #cbdacd;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 13px;
+}
+.plan-work-package h3 {
+  font-size: 15px;
+  margin: 8px 0 15px;
+}
+.plan-work-package > div > label {
+  display: block;
+  font-size: 11px;
+}
+.plan-work-package input[type="number"] {
+  display: block;
+  width: 130px;
+  border: 1px solid #b9cbbf;
+  border-radius: 6px;
+  padding: 9px;
+  margin-top: 8px;
+  background: white;
+  color: var(--ink);
+}
+.plan-work-package .dependency-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.dependency-checkbox input {
+  accent-color: var(--teal);
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.dependency-label {
+  font-size: 11px;
+}
+.plan-work-package > small {
+  grid-column: 1/-1;
+  color: var(--muted);
+  font-size: 10px;
+  border-top: 1px solid #dde5d9;
+  padding-top: 10px;
+}
+.plan-work-package p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.high-contrast .plan-work-package,
+.high-contrast .diamond-start,
+.high-contrast .diamond-end,
+.high-contrast .diamond-branches > div {
+  border: 2px solid #174337;
+}
+@media (max-width: 600px) {
+  .plan-work-package {
+    grid-template-columns: 1fr;
+  }
+  .diamond-branches {
+    gap: 10px;
+  }
+  .dependency-diamond {
+    font-size: 10px;
+  }
+}

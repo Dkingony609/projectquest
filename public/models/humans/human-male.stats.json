@@ -1,0 +1,26 @@
+{
+  "asset": "human-male.glb",
+  "bodyHeightMetres": 1.75,
+  "bones": 53,
+  "vertices": 18496,
+  "triangles": 33736,
+  "meshes": {
+    "Body": 17256,
+    "Shirt": 1528,
+    "Trousers": 1712,
+    "Shoes": 3104,
+    "Eyes": 172,
+    "Eyebrows": 192,
+    "Hair": 3678,
+    "PPE_Hardhat": 1040,
+    "PPE_Vest": 1236,
+    "Wardrobe_ScrubTop": 1528,
+    "Wardrobe_ScrubTrousers": 1712,
+    "Wardrobe_ScrubPocket": 2,
+    "Wardrobe_ScrubDrawstring": 576
+  },
+  "clips": [
+    "Idle",
+    "Walk"
+  ]
+}

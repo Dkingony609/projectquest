@@ -1,0 +1,30 @@
+{
+  "format": "ProjectQuest human asset provenance v1",
+  "sources": [
+    {
+      "url": "https://github.com/Makehuman-2/MH2_Asset_Repository_CCO/releases/tag/CC0",
+      "archive": "mh_system_CC0.zip",
+      "sha256": "d38970b0a2a06dbcb2d3f55aa3d673c45bc88e7bd1f4afa0368a0782938d55bc",
+      "assetLicense": "CC0-1.0"
+    },
+    {
+      "url": "https://github.com/makehumancommunity/mpfb2",
+      "archive": "mpfb2-full.zip",
+      "sha256": "19a58071b985c416c4a5a127b791dd52b2c159d62870cfec7d846b892bd90aab",
+      "assetLicense": "CC0-1.0",
+      "toolLicense": "GPL-3.0; tool not distributed"
+    }
+  ],
+  "models": [
+    {
+      "file": "human-female.glb",
+      "bytes": 4137664,
+      "sha256": "9d79e66e01e5b6f8b49d4f4ec405bc65f61e50ab5e87f7ee94774f90c2a041e5"
+    },
+    {
+      "file": "human-male.glb",
+      "bytes": 3731524,
+      "sha256": "160eab6c3c4dbfda2179b1b174cb46215d186baaa5969586a89615e077ba2873"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# First Light at Riverside
+
+ProjectQuest's original instrumental score is a 32-bar, 78 BPM stereo composition (~98 seconds), with felt/electric-piano harmonies, an evolving pad, restrained bass and brushed percussion. Musical sections introduce and develop a recurring melody; the loop tail wraps into its beginning. It is original project-authored audio, with no sampled third-party recordings or external streaming service. The sound-effect motifs are also authored in `GameAudio.ts`.
+
+The bundled Ogg Vorbis and MP3 files are generated from `render_score.py`. Rebuilding the original composition requires Python, NumPy and ffmpeg; playing the game requires none of these. Run `python3 src/audio/render_score.py --verify` to validate the original PCM composition, or omit `--verify` to regenerate assets. `public/audio/score-metadata.json` records the duration, peak, RMS, loop boundary and asset hash. This is signal validation, not a claim of human listening-test results.
+
+Audio begins only after a user gesture. One lazily created Web Audio context decodes the score, loops it and mixes scene transitions with short musical effects. Smooth gain changes, a dynamics compressor, tab suspension and bounded effect voices prevent abrupt level changes and runaway audio work. A post-master analyser provides real output measurement for browser checks. Music/effects volumes and mute are independent persisted preferences. Unsupported audio and failed loads leave gameplay operational; every relevant event has visible feedback.
